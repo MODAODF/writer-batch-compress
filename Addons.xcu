@@ -5,8 +5,8 @@
  oor:name="Addons"
  oor:package="org.openoffice.Office">
     <node oor:name="AddonUI">
-        <node oor:name="OfficeToolBarMerging">
-            <node oor:name="org.ossii.WriterBatchCompress.OfficeToolBarMerging" oor:op="replace">
+        <node oor:name="OfficeToolbarMerging">
+            <node oor:name="org.ossii.WriterBatchCompress.OfficeToolbarMerging" oor:op="replace">
                 <node oor:name="WBC001" oor:op="replace">
                     <prop oor:name="MergeToolBar" oor:type="xs:string">
                         <value>standardbar</value>
@@ -41,8 +41,8 @@
                         </node> <!-- WBC002 -->
                     </node> <!-- ToolBarItems -->
                 </node> <!-- WBC001 -->
-            </node> <!-- org.ossii.WriterBatchCompress.OfficeToolBarMerging -->
-        </node> <!-- OfficeToolBarMerging -->
+            </node> <!-- org.ossii.WriterBatchCompress.OfficeToolbarMerging -->
+        </node> <!-- OfficeToolbarMerging -->
         <node oor:name="OfficeMenuBarMerging">
             <node oor:name="org.ossii.WriterBatchCompress.OfficeMenuBarMerging" oor:op="replace">
                 <node oor:name="WBC003" oor:op="replace">

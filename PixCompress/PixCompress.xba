@@ -45,8 +45,9 @@ Sub Main
     &apos; Traduction dialogue
 	oDlg.Controls(0).Model.Label = Trans(2)
 	oDlg.Controls(1).Model.Label = Trans(3)
-	oDlg.Controls(3).Model.Label = Trans(1)
-	oDlg.Controls(4).Model.Label = Trans(0)
+	oDlg.Controls(3).Model.Label = Trans(12)
+	oDlg.Controls(5).Model.Label = Trans(1)
+	oDlg.Controls(6).Model.Label = Trans(0)
 
 	&apos; Test si le document a été sauvegardé
 	If oDoc.isModified() or oDoc.URL = &quot;&quot; then
@@ -90,7 +91,7 @@ Sub Main
     &apos; Affichage du poids total
     nPoids = tPoids / 1000 
     sPoids = Format(nPoids, &quot;##,##0.00&quot;) 
-	oDlg.Controls(5).Model.Label = Trans(9) &amp; sPoids &amp; Trans(8)
+	oDlg.Controls(7).Model.Label = Trans(9) &amp; sPoids &amp; Trans(8)
 	
 	&apos; Y-a t-il une image sélectionnée ?		
 	If oQuoi.ImplementationName = &quot;SwXTextGraphicObject&quot; or _
@@ -218,6 +219,7 @@ english = array ( _
 	&quot;Weight total of pictures: &quot;, _
 	&quot;Error: this document must be saved before!&quot;, _
 	&quot;Weight of pictures reduced: &quot;, _
+	&quot;DPI:&quot;, _
 	)
 french = array ( _
 	&quot;Attention : l&apos;opération ne pourra être annulée. Une fois faite, la taille originale des images sera perdue.&quot;, _
@@ -232,10 +234,27 @@ french = array ( _
 	&quot;Taille totale des images : &quot;, _
 	&quot;Erreur : le document doit d&apos;abord être sauvegardé !&quot;, _
 	&quot;Taille des images réduite : &quot;, _
-	)	
+	&quot;PPP :&quot;, _
+	)
+chinese = array ( _
+	&quot;注意：壓縮作業無法復原，一旦執行後原始圖片大小將會遺失。&quot;, _
+	&quot;壓縮對象：&quot;, _
+	&quot;所有圖片&quot;, _
+	&quot;選取的圖片&quot;, _
+	&quot;正在壓縮中...&quot;, _
+	&quot;所有圖片皆已壓縮完成！&quot;, _
+	&quot;選取的圖片已壓縮完成：&quot;, _
+	&quot;分析圖片中&quot;, _
+	&quot;KB&quot;, _
+	&quot;圖片總大小：&quot;, _
+	&quot;錯誤：請先儲存文件！&quot;, _
+	&quot;圖片大小已縮減：&quot;, _
+	&quot;DPI：&quot;, _
+	)
 
 	Select Case sLang
 		Case &quot;fr&quot; : Trans = french(nStr)
+		Case &quot;zh&quot; : Trans = chinese(nStr)
 		Case else :	Trans = english(nStr)
 	End select
 End function

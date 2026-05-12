@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="PixCompress" script:language="StarBasic">
+&apos;********************************************************************************
+&apos;This extension is Copyright (C) 2012-2016 Cyril Beaussier  - v. 1.4
+
+&apos;This code is free software; you can redistribute it and/or
+&apos;modify it under the terms of the CeCILL (for Ce[a] C[nrs] I[nria] L[ogiciel] L[ibre])
+&apos;License as published by CEA, CNRS and INRIA.
+
+&apos;This library is distributed in the hope that it will be useful,
+&apos;but WITHOUT ANY WARRANTY; without even the implied warranty of
+&apos;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+&apos;******************************************************************************
+
+Private oDoc, oDlg, oCurs as object
+Private nPage as integer
+Private bImage as boolean
+Private uneImg as string
+Private sLang as string
+Private tPoids as double
+Private nbImg as integer
+
+Sub Main
+	Dim oQuoi as object
+	Dim oBibli, oDialog, oTaille As Object
+	Dim oWait, oDlgModele, oBarre, oLocal As Object
+	Dim sListe as string
+	Dim sExt(1)
+	Dim sImg, sPoids as string
+	Dim nPoids as double
+	Dim nHo, nLo, nHd, nLd, i as long
+
+	oDoc = ThisComponent
+
+	GlobalScope.BasicLibraries.LoadLibrary(&quot;Tools&quot;)
+	DialogLibraries.LoadLibrary(&quot;PixCompress&quot;)
+    oBibli = DialogLibraries.GetByName(&quot;PixCompress&quot;)
+	oDialog = oBibli.GetByName(&quot;Dialogue&quot;)
+    oDlg = CreateUnoDialog(oDialog) 
+    &apos; Paramétrage langue
+    sLang = &quot;en&quot;
+    oLocal = GetStarOfficeLocale()
+    sLang = Left(oLocal.Language, 2)
+    &apos; Traduction dialogue
+	oDlg.Controls(0).Model.Label = Trans(2)
+	oDlg.Controls(1).Model.Label = Trans(3)
+	oDlg.Controls(3).Model.Label = Trans(1)
+	oDlg.Controls(4).Model.Label = Trans(0)
+
+	&apos; Test si le document a été sauvegardé
+	If oDoc.isModified() or oDoc.URL = &quot;&quot; then
+		msgBox Trans(10)
+		exit Sub
+	Endif
+			       
+	bImage = false
+	i = 0
+	tPoids = 0	
+	oQuoi = oDoc.getCurrentSelection
+	oImages = oDoc.getDrawPage()
+	nbImg = oImages.Count -1
+	oWait = CreeBarre(Trans(7), nbImg)
+	oCurs = oDoc.CurrentController.ViewCursor
+	nPage = oCurs.Page   &apos;Mémorise la page courante
+
+
+	listeImg = oDlg.GetControl(&quot;listeImg&quot;)
+	oWait.setVisible( true )
+
+	For Each oImg in oImages
+      If oImg.supportsService(&quot;com.sun.star.text.TextGraphicObject&quot;) or _
+         oImg.supportsService(&quot;com.sun.star.drawing.GraphicObjectShape&quot;) then
+         oWait.Controls(0).Model.ProgressValue = i
+         With oImg
+         	oGraph = .Graphic
+       		nHo = oGraph.Size100thMM.Height
+			nLo = oGraph.Size100thMM.Width
+			nHd = .Size.Height
+			nLd = .Size.Width			
+			sExt = Split(.Graphic.MimeType, &quot;/&quot;)
+			sImg = Right(.Graphic.OriginURL,32)
+			sPoids = Poids(i)
+			sListe = .Name &amp; &quot; (&quot; &amp; sExt(1)  &amp; &quot;) &quot; &amp; sPoids &amp; Trans(8)
+         End With
+         listeImg.addItem (sListe, i)
+         i = i + 1
+      End If
+    Next 
+    &apos; Affichage du poids total
+    nPoids = tPoids / 1000 
+    sPoids = Format(nPoids, &quot;##,##0.00&quot;) 
+	oDlg.Controls(5).Model.Label = Trans(9) &amp; sPoids &amp; Trans(8)
+	
+	&apos; Y-a t-il une image sélectionnée ?		
+	If oQuoi.ImplementationName = &quot;SwXTextGraphicObject&quot; or _
+		oQuoi.ImplementationName = &quot;SwXShape&quot; then
+		uneImg = oQuoi.name
+		bImage = true	
+	Else
+	&apos; On liste toutes les images
+		bCompressOne = oDlg.GetControl(&quot;bCompressOne&quot;)		
+		bCompressOne.enable = false
+	End if
+	oWait.dispose()
+	oDlg.execute     
+End Sub
+
+Sub CompresseImages
+	bImage = false
+	Call CompresseImage
+End Sub
+
+Sub CompresseImage
+	Dim oImages as object
+	Dim sMsg as string
+	Dim i as integer
+	
+	oImages = oDoc.getDrawPage()
+		
+	If not bImage then
+	&apos;On fait toutes les images
+		oWait = CreeBarre(Trans(4), nbImg)
+		oWait.setVisible( true )
+		For Each oImg in oImages
+			oWait.Controls(0).Model.ProgressValue = i
+			Call CopieColle(oImg) 				
+			i = i+1
+		Next
+		oWait.dispose()
+		sMsg = Trans(5)
+		oCurs.JumpToPage(nPage) &apos;Replace le curseur à sa position initiale
+	Else
+	&apos; On ne fait que l&apos;image sélectionnée 
+		For i = 0 To oImages.Count - 1
+			oImg  = oImages(i)
+			If  oImg.name = uneImg then exit for
+		Next i	
+		Call CopieColle(oImg)
+		sMsg = Trans(6) &amp; oImg.name
+	End if
+	oDoc.store()
+	&apos; Recalcul du poids des images
+	sMsg = sMsg &amp; chr(10) &amp; Trans(11)
+    sMsg = sMsg &amp; Format(( tPoids / 1000 ), &quot;##,##0.00&quot;) &amp; Trans(8) &amp; &quot; &gt; &quot;
+    tPoids = 0
+	For i = 0 to nbImg
+		sPoids = Poids(i)
+	Next i
+	sMsg = sMsg &amp; Format(( tPoids / 1000 ), &quot;##,##0.00&quot;) &amp; Trans(8)
+	&apos; Fermeture du dialogue et résultat
+	oDlg.EndExecute
+	msgbox sMsg, 64, &quot;PixCompress&quot;
+End Sub
+
+Sub CopieColle (oImg)
+	oPage = oDoc.CurrentController.Frame
+	oDisp = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+	oCopie = oDoc.createInstance(&quot;com.sun.star.drawing.GraphicObjectShape&quot;)
+
+	Dim oTaille as new com.sun.star.awt.Size
+	Dim nHo, nLo as long
+	Dim nCoef as long
+	nCoef = 1.5
+	Dim args(0) as new com.sun.star.beans.PropertyValue
+	args(0).Name = &quot;SelectedFormat&quot;
+	args(0).Value = 2
+	
+	If oImg.supportsService(&quot;com.sun.star.text.TextGraphicObject&quot;) or _
+    	oImg.supportsService(&quot;com.sun.star.drawing.GraphicObjectShape&quot;) then
+	
+		oTaille = oImg.getSize()
+		nHo = oTaille.Height
+		nLo = oTaille.Width
+		nHo = nHo * nCoef : nLo = nLo * nCoef
+		oTaille.Height = nHo
+		oTaille.Width = nLo
+	
+		oCopie.Graphic = oImg.Graphic
+		oCopie.name = &quot;_transfert_&quot; 
+		oCopie.setSize( oTaille ) 
+	    oDoc.DrawPage.add(oCopie)    
+	
+		oDoc.CurrentController.select(oCopie)
+		oDisp.executeDispatch(oPage, &quot;.uno:Cut&quot;, &quot;&quot;, 0, Array())
+		oDoc.CurrentController.select(oImg)
+		oDisp.executeDispatch(oPage, &quot;.uno:ClipboardFormatItems&quot;, &quot;&quot;, 0, args())
+	Endif
+End Sub
+
+Function Taille(sNom, nHo, nLo, nHd, nLd)
+	nConv = 1000 &apos; mm &gt; cm
+	sTaille = &quot;? x ?&quot;
+	If (nHo &gt; 0) or (nLo &gt; 0) then
+		nHo = Format(nHo / nConv, &quot;0.00&quot;)
+		nLo = Format(nLo / nConv, &quot;0.00&quot;)
+		sTaille = nHo &amp; &quot; x &quot; &amp; nLo  
+	end if
+	nHd = Format(nHd / nConv, &quot;0.00&quot;)
+	nLd = Format(nLd / nConv, &quot;0.00&quot;)
+    Taille = sNom &amp; &quot; : &quot; &amp; sTaille &amp; &quot; &gt; &quot; &amp; nHd &amp; &quot; x &quot; &amp; nLd
+    
+End Function
+
+Function Trans(nStr)
+	Dim english, french, german, spanish
+	
+english = array ( _
+	&quot;Warning: the process cannot be canceled. Once did, original size for each picture will be lost.&quot;, _
+	&quot;Compression for :&quot;, _
+	&quot;All pictures&quot;, _
+	&quot;Selected picture&quot;, _
+	&quot;Compression in progress...&quot;, _
+	&quot;Compression finished for all pictures!&quot;, _
+	&quot;Compression finished for selected picture: &quot;, _
+	&quot;Analyzis pictures&quot;, _
+	&quot;Kb&quot;, _
+	&quot;Weight total of pictures: &quot;, _
+	&quot;Error: this document must be saved before!&quot;, _
+	&quot;Weight of pictures reduced: &quot;, _
+	)
+french = array ( _
+	&quot;Attention : l&apos;opération ne pourra être annulée. Une fois faite, la taille originale des images sera perdue.&quot;, _
+	&quot;Compression pour :&quot;, _
+	&quot;Toutes les images&quot;, _
+	&quot;L&apos;image sélectionnée&quot;, _
+	&quot;Compression en cours...&quot;, _
+	&quot;Compression terminée pour toutes les images !&quot;, _
+	&quot;Compression terminée pour l&apos;image sélectionnée : &quot;, _
+	&quot;Analyse des images&quot;, _
+	&quot;Ko&quot;, _
+	&quot;Taille totale des images : &quot;, _
+	&quot;Erreur : le document doit d&apos;abord être sauvegardé !&quot;, _
+	&quot;Taille des images réduite : &quot;, _
+	)	
+
+	Select Case sLang
+		Case &quot;fr&quot; : Trans = french(nStr)
+		Case else :	Trans = english(nStr)
+	End select
+End function
+
+
+Function Poids(nIndex)
+	Dim sRet, sUrl As string
+	Dim args(1) As Variant
+    Dim oZip As object, oImages As Object
+    Dim oFlux As object, oImage As Object
+    Dim nPoids as double
+    Dim PropZ As New com.sun.star.beans.NamedValue
+
+	sUrl = ThisComponent.URL
+	oZip = createUnoService(&quot;com.sun.star.packages.Package&quot;)
+	PropZ.Name = &quot;RepairPackage&quot;
+	PropZ.Value = true
+	Args(0) = sUrl
+	Args(1) = PropZ
+	oZip.initialize(Args())
+	sRep = &quot;Pictures&quot;
+	if oZip.hasByHierarchicalName(sRep) then
+		oRep = oZip.getByHierarchicalName(sRep)
+		oImages = oRep.getElementNames()
+		For i = 0 to UBound(oImages)
+			If i = nIndex Then
+				oImage = oZip.getByHierarchicalName(sRep &amp;&quot;/&quot;&amp; oImages(i))
+				oFlux = oImage.getInputStream()
+				nPoids = oFlux.available()
+				tPoids = tPoids + nPoids
+				nPoids = nPoids / 1000 
+				sRet = Format(nPoids, &quot;##,##0.00&quot;)
+				oFlux.closeInput
+			Endif
+		Next i
+	else
+		sRet = &quot;Error&quot;
+	endif 
+	Poids = sRet	  
+End function   	
+
+Function CreeBarre(sTitre as string, vMax as integer) as object
+	&apos; Création du modèle
+	oDlgModele = createUnoService( &quot;com.sun.star.awt.UnoControlDialogModel&quot;)
+	
+	&apos; Où mettre le dialogue
+	oDlgModele.PositionX = 100
+	oDlgModele.PositionY = 100
+	oDlgModele.Width = 105
+	oDlgModele.Height = 20
+	oDlgModele.Title = sTitre
+	
+	&apos; Création du contrôle barre de progression
+	oBarre = oDlgModele.createInstance( &quot;com.sun.star.awt.UnoControlProgressBarModel&quot; )
+	&apos; Où mettre la barre
+	oBarre.PositionX = 0
+	oBarre.PositionY = 0
+	oBarre.Width = 105
+	oBarre.Height = 20
+	oBarre.ProgressValueMin = 0
+	oBarre.ProgressValueMax = vMax
+	&apos; Mettre la barre dans le modèle
+	oDlgModele.insertByName(&quot;bar&quot;, oBarre )
+	
+	&apos; Création du dialogue sur la base du modèle
+	oWait = createUnoService( &quot;com.sun.star.awt.UnoControlDialog&quot;)
+	oWait.setModel( oDlgModele )
+	
+	CreeBarre = oWait
+End function
+</script:module>

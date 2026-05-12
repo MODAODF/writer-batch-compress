@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="Dialogue" dlg:left="170" dlg:top="103" dlg:width="234" dlg:height="147" dlg:closeable="true" dlg:moveable="true" dlg:title="PixCompress">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:background-color="0xcccccc"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:button dlg:id="bCompressAll" dlg:tab-index="2" dlg:left="156" dlg:top="77" dlg:width="75" dlg:height="16" dlg:value="bCompressAll">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.script:PixCompress.PixCompress.CompresseImages?language=Basic&amp;location=application" script:language="Script"/>
+  </dlg:button>
+  <dlg:button dlg:id="bCompressOne" dlg:tab-index="1" dlg:left="156" dlg:top="98" dlg:width="75" dlg:height="16" dlg:value="bCompressOne">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.script:PixCompress.PixCompress.CompresseImage?language=Basic&amp;location=application" script:language="Script"/>
+  </dlg:button>
+  <dlg:menulist dlg:id="listeImg" dlg:tab-index="0" dlg:left="3" dlg:top="4" dlg:width="149" dlg:height="125"/>
+  <dlg:text dlg:id="txtCompress" dlg:tab-index="4" dlg:left="157" dlg:top="58" dlg:width="72" dlg:height="12" dlg:value="txtCompress"/>
+  <dlg:text dlg:style-id="0" dlg:id="txtWarn" dlg:tab-index="3" dlg:left="157" dlg:top="5" dlg:width="71" dlg:height="49" dlg:value="txtWarn" dlg:multiline="true"/>
+  <dlg:text dlg:id="txtPoids" dlg:tab-index="5" dlg:left="5" dlg:top="134" dlg:width="147" dlg:height="10" dlg:value="txtPoids"/>
+ </dlg:bulletinboard>
+</dlg:window>

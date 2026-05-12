@@ -1,0 +1,8 @@
+Copyright (c) 2026 by OSSII
+
+在 Writer 中批次壓縮所有圖片功能，提供統一設定解析度(DPI)與壓縮品質之選項，讓使用者可一次性處理文件中的所有圖片，快速縮減檔案容量，提升 ODF 文件於傳輸、儲存及開啟時之效率。
+
+由 PixCompress 修改而來。
+
+PixCompress: Copyright (c) 2012-2016 by Bidouille - Converted for LibreOffice 6.1+ by O. Morelle.
+

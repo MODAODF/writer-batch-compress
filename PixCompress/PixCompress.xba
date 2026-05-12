@@ -189,6 +189,61 @@ Sub CopieColle (oImg)
 	Endif
 End Sub
 
+&apos; Resample a bitmap-backed image at the requested DPI.
+&apos; Vector graphics (SVG/EMF/WMF) are skipped and the function returns false.
+Function ResampleBitmap(oImg as object, nDPI as integer) as boolean
+	Dim sMime as string, sFilterMime as string
+	Dim oTaille as object, oExporter as object, oProvider as object
+	Dim oNewGraph as object, oSFA as object, oPaths as object
+	Dim nPixW as long, nPixH as long
+	Dim sUrl as string
+	Dim aFilter(2) as new com.sun.star.beans.PropertyValue
+	Dim aOut(2)    as new com.sun.star.beans.PropertyValue
+	Dim aLoad(0)   as new com.sun.star.beans.PropertyValue
+
+	ResampleBitmap = false
+	if IsNull(oImg.Graphic) then exit function
+	sMime = oImg.Graphic.MimeType
+	Select Case sMime
+		Case &quot;image/jpeg&quot; :                          sFilterMime = &quot;image/jpeg&quot;
+		Case &quot;image/png&quot;, &quot;image/bmp&quot;, &quot;image/gif&quot;, _
+		     &quot;image/tiff&quot;, &quot;image/x-ms-bmp&quot; :       sFilterMime = &quot;image/png&quot;
+		Case Else : exit function   &apos; vector / unknown -&gt; skip
+	End Select
+
+	oTaille = oImg.getSize()
+	nPixW = CLng(oTaille.Width  * nDPI / 2540)
+	nPixH = CLng(oTaille.Height * nDPI / 2540)
+	if nPixW &lt; 1 then nPixW = 1
+	if nPixH &lt; 1 then nPixH = 1
+
+	oPaths = createUnoService(&quot;com.sun.star.util.PathSettings&quot;)
+	sUrl = oPaths.Temp &amp; &quot;/pixcompress_&quot; &amp; oImg.Name &amp; &quot;.tmp&quot;
+
+	aFilter(0).Name = &quot;PixelWidth&quot;  : aFilter(0).Value = nPixW
+	aFilter(1).Name = &quot;PixelHeight&quot; : aFilter(1).Value = nPixH
+	aFilter(2).Name = &quot;Translucent&quot; : aFilter(2).Value = true
+	aOut(0).Name = &quot;MediaType&quot;  : aOut(0).Value = sFilterMime
+	aOut(1).Name = &quot;URL&quot;        : aOut(1).Value = sUrl
+	aOut(2).Name = &quot;FilterData&quot; : aOut(2).Value = aFilter()
+
+	oExporter = createUnoService(&quot;com.sun.star.drawing.GraphicExportFilter&quot;)
+	oExporter.setSourceDocument(oImg)
+	oExporter.filter(aOut())
+
+	oProvider = createUnoService(&quot;com.sun.star.graphic.GraphicProvider&quot;)
+	aLoad(0).Name = &quot;URL&quot; : aLoad(0).Value = sUrl
+	oNewGraph = oProvider.queryGraphic(aLoad())
+
+	oSFA = createUnoService(&quot;com.sun.star.ucb.SimpleFileAccess&quot;)
+	if oSFA.exists(sUrl) then oSFA.kill(sUrl)
+
+	if not IsNull(oNewGraph) then
+		oImg.Graphic = oNewGraph
+		ResampleBitmap = true
+	end if
+End Function
+
 Function Taille(sNom, nHo, nLo, nHd, nLd)
 	nConv = 1000 &apos; mm &gt; cm
 	sTaille = &quot;? x ?&quot;

@@ -20,6 +20,7 @@ Private uneImg as string
 Private sLang as string
 Private tPoids as double
 Private nbImg as integer
+Private nDPI as integer
 
 Sub Main
 	Dim oQuoi as object
@@ -116,7 +117,8 @@ Sub CompresseImage
 	Dim oImages as object
 	Dim sMsg as string
 	Dim i as integer
-	
+
+	nDPI = oDlg.GetControl(&quot;numDPI&quot;).Value
 	oImages = oDoc.getDrawPage()
 		
 	If not bImage then
@@ -155,38 +157,10 @@ Sub CompresseImage
 End Sub
 
 Sub CopieColle (oImg)
-	oPage = oDoc.CurrentController.Frame
-	oDisp = createUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
-	oCopie = oDoc.createInstance(&quot;com.sun.star.drawing.GraphicObjectShape&quot;)
-
-	Dim oTaille as new com.sun.star.awt.Size
-	Dim nHo, nLo as long
-	Dim nCoef as long
-	nCoef = 1.5
-	Dim args(0) as new com.sun.star.beans.PropertyValue
-	args(0).Name = &quot;SelectedFormat&quot;
-	args(0).Value = 2
-	
-	If oImg.supportsService(&quot;com.sun.star.text.TextGraphicObject&quot;) or _
-    	oImg.supportsService(&quot;com.sun.star.drawing.GraphicObjectShape&quot;) then
-	
-		oTaille = oImg.getSize()
-		nHo = oTaille.Height
-		nLo = oTaille.Width
-		nHo = nHo * nCoef : nLo = nLo * nCoef
-		oTaille.Height = nHo
-		oTaille.Width = nLo
-	
-		oCopie.Graphic = oImg.Graphic
-		oCopie.name = &quot;_transfert_&quot; 
-		oCopie.setSize( oTaille ) 
-	    oDoc.DrawPage.add(oCopie)    
-	
-		oDoc.CurrentController.select(oCopie)
-		oDisp.executeDispatch(oPage, &quot;.uno:Cut&quot;, &quot;&quot;, 0, Array())
-		oDoc.CurrentController.select(oImg)
-		oDisp.executeDispatch(oPage, &quot;.uno:ClipboardFormatItems&quot;, &quot;&quot;, 0, args())
-	Endif
+	if oImg.supportsService(&quot;com.sun.star.text.TextGraphicObject&quot;) or _
+	   oImg.supportsService(&quot;com.sun.star.drawing.GraphicObjectShape&quot;) then
+		Call ResampleBitmap(oImg, nDPI)
+	end if
 End Sub
 
 &apos; Resample a bitmap-backed image at the requested DPI.

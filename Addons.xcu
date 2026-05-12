@@ -4,79 +4,88 @@
  xmlns:xs="http://www.w3.org/2001/XMLSchema"
  oor:name="Addons"
  oor:package="org.openoffice.Office">
-<node oor:name="AddonUI">
-<node oor:name="OfficeToolBarMerging">
-      <node oor:name="pixcompress" oor:op="replace">
-		<node oor:name="S1" oor:op="replace">
-		  <prop oor:name="MergeToolBar" oor:type="xs:string">
-		    <value>standardbar</value>
-		  </prop>
-		  <prop oor:name="MergePoint">
-		    <value>.uno:InsertGraphic</value>
-		  </prop>
-		  <prop oor:name="MergeCommand">
-			<value>AddAfter</value>
-		  </prop>
-		  <prop oor:name="MergeFallback">
-			<value>AddLast</value>
-		  </prop>
-		  <prop oor:name="MergeContext" oor:type="xs:string">
-		    <value>com.sun.star.text.TextDocument</value>
-		  </prop>
-		  <node oor:name="ToolBarItems">
-			<node oor:name="T1" oor:op="replace">
-		        <prop oor:name="URL" oor:type="xs:string">
-				<value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
-			</prop>
-			<prop oor:name="Title" oor:type="xs:string">
-				<value xml:lang="en">Compress pictures...</value>
-				<value xml:lang="zh-TW">批次壓縮圖片...</value>
-			</prop>
-			<prop oor:name="Target" oor:type="xs:string">
-				<value>_self</value>
-			</prop>
-			<prop oor:name="Context" oor:type="xs:string">
-				<value>com.sun.star.text.TextDocument</value>
-			</prop>
-			<prop oor:name="ImageIdentifier" oor:type="xs:string">
-				<value>%origin%/icons/image1</value>
-			</prop>
-			</node>
-		  </node>
-		</node>
-      </node>
-    </node>
-<node oor:name="OfficeMenuBarMerging">
-      <node oor:name="pixcompress" oor:op="replace">
-		<node oor:name="S1" oor:op="replace">
-		  <prop oor:name="MergePoint">
-		    <value>.uno:ToolsMenu\.uno:AVMediaPlayer</value>
-		  </prop>
-		  <prop oor:name="MergeCommand">
-			<value>AddAfter</value>
-		  </prop>
-		  <prop oor:name="MergeFallback">
-			<value>AddPath</value>
-		  </prop>
-		  <prop oor:name="MergeContext" oor:type="xs:string">
-		    <value>com.sun.star.text.TextDocument</value>
-		  </prop>
-		  <node oor:name="MenuItems">
-			<node oor:name="M1" oor:op="replace">
-		        <prop oor:name="URL" oor:type="xs:string">
-				<value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
-			</prop>
-			<prop oor:name="Title" oor:type="xs:string">
-				<value xml:lang="en">Minimize pictures...</value>
-			    <value xml:lang="fr">Compression d'images...</value>
-			</prop>
-			<prop oor:name="Target" oor:type="xs:string">
-				<value>_self</value>
-			</prop>
-			</node>
-		  </node>
-		</node>
-      </node>
-    </node>
-</node>
+    <node oor:name="AddonUI">
+        <node oor:name="OfficeToolBarMerging">
+            <node oor:name="org.ossii.WriterBatchCompress.OfficeToolBarMerging" oor:op="replace">
+                <node oor:name="WBC001" oor:op="replace">
+                    <prop oor:name="MergeToolBar" oor:type="xs:string">
+                        <value>standardbar</value>
+                    </prop>
+                    <prop oor:name="MergePoint">
+                        <value>.uno:InsertObjectChart</value>
+                    </prop>
+                    <prop oor:name="MergeCommand">
+                        <value>AddBefore</value>
+                    </prop>
+                    <prop oor:name="MergeFallback">
+                        <value>AddFirst</value>
+                    </prop>
+                    <prop oor:name="MergeContext" oor:type="xs:string">
+                        <value>com.sun.star.text.TextDocument</value>
+                    </prop>
+                    <node oor:name="ToolBarItems">
+                        <node oor:name="WBC002" oor:op="replace">
+                            <prop oor:name="URL" oor:type="xs:string">
+                                <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                            </prop>
+                            <prop oor:name="Title" oor:type="xs:string">
+                                <value xml:lang="en">Compress pictures</value>
+                                <value xml:lang="zh-TW">批次壓縮圖片</value>
+                            </prop>
+                            <prop oor:name="Target" oor:type="xs:string">
+                                <value>_self</value>
+                            </prop>
+                            <prop oor:name="Context" oor:type="xs:string">
+                                <value>com.sun.star.text.TextDocument</value>
+                            </prop>
+                        </node> <!-- WBC002 -->
+                    </node> <!-- ToolBarItems -->
+                </node> <!-- WBC001 -->
+            </node> <!-- org.ossii.WriterBatchCompress.OfficeToolBarMerging -->
+        </node> <!-- OfficeToolBarMerging -->
+        <node oor:name="OfficeMenuBarMerging">
+            <node oor:name="org.ossii.WriterBatchCompress.OfficeMenuBarMerging" oor:op="replace">
+                <node oor:name="WBC003" oor:op="replace">
+                    <prop oor:name="MergePoint">
+                        <value>.uno:InsertMenu\.uno:InsertGraphic</value>
+                    </prop>
+                    <prop oor:name="MergeCommand">
+                        <value>AddAfter</value>
+                    </prop>
+                    <prop oor:name="MergeFallback">
+                        <value>AddPath</value>
+                    </prop>
+                    <prop oor:name="MergeContext" oor:type="xs:string">
+                        <value>com.sun.star.text.TextDocument</value>
+                    </prop>
+                    <node oor:name="MenuItems">
+                        <node oor:name="WBC004" oor:op="replace">
+                            <prop oor:name="URL" oor:type="xs:string">
+                                <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                            </prop>
+                            <prop oor:name="Title" oor:type="xs:string">
+                                <value xml:lang="en">Compress all pictures...</value>
+                                <value xml:lang="zh-tw">壓縮所有圖片...</value>
+                            </prop>
+                            <prop oor:name="Target" oor:type="xs:string">
+                                <value>_self</value>
+                            </prop>
+                        </node> <!-- WBC004 -->
+                    </node> <!-- MenuItems -->
+                </node> <!-- WBC003 -->
+            </node> <!-- org.ossii.WriterBatchCompress.OfficeMenuBarMerging -->
+        </node> <!-- OfficeMenuBarMerging -->
+        <node oor:name="Images">
+            <node oor:name="org.ossii.WriterBatchCompress.WBC.N001" oor:op="replace">
+                <prop oor:name="URL" oor:type="xs:string">
+                    <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                </prop>
+                <node oor:name="UserDefinedImages">
+                    <prop oor:name="ImageSmallURL" oor:type="xs:string">
+                        <value>%origin%/icons/image1_16.bmp</value>
+                    </prop>
+                </node> <!-- UserDefinedImages -->
+            </node> <!-- org.ossii.WriterBatchCompress.WBC.N001 -->
+        </node> <!-- Images -->
+    </node> <!-- AddonUI -->
 </oor:component-data>

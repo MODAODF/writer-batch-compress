@@ -8,8 +8,8 @@
 <node oor:name="OfficeToolBarMerging">
       <node oor:name="pixcompress" oor:op="replace">
 		<node oor:name="S1" oor:op="replace">
-		  <prop oor:name="MergeToolBar">
-		    <value>private:resource/toolbar/standardbar</value>
+		  <prop oor:name="MergeToolBar" oor:type="xs:string">
+		    <value>standardbar</value>
 		  </prop>
 		  <prop oor:name="MergePoint">
 		    <value>.uno:InsertGraphic</value>

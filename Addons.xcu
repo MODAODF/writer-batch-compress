@@ -75,6 +75,25 @@
                 </node> <!-- WBC003 -->
             </node> <!-- org.ossii.WriterBatchCompress.OfficeMenuBarMerging -->
         </node> <!-- OfficeMenuBarMerging -->
+        <node oor:name="OfficeNotebookBar">
+            <node oor:name="org.ossii.WriterBatchCompress.OfficeNotebookBar" oor:op="replace">
+                <node oor:name="WBC005" oor:op="replace">
+                    <prop oor:name="Context" oor:type="xs:string">
+                        <value>com.sun.star.text.TextDocument</value>
+                    </prop>
+                    <prop oor:name="URL">
+                        <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                    </prop>
+                    <prop oor:name="Title">
+                        <value xml:lang="en">Compress all pictures...</value>
+                        <value xml:lang="zh-tw">壓縮所有圖片...</value>
+                    </prop>
+                    <prop oor:name="Target">
+                        <value>_self</value>
+                    </prop>
+                </node> <!-- ONB001 -->
+           </node> <!-- ossii.OfficeNotebookBar -->
+        </node> <!-- OfficeNotebookBar -->
         <node oor:name="Images">
             <node oor:name="org.ossii.WriterBatchCompress.WBC.N001" oor:op="replace">
                 <prop oor:name="URL" oor:type="xs:string">

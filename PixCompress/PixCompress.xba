@@ -150,7 +150,12 @@ Sub CompresseImage
 	End if
 	&apos; Save the compressed result to a new file rather than overwriting
 	&apos; the original. Append &quot;-compressed&quot; before the extension.
-	nDot = InStrRev(oDoc.URL, &quot;.&quot;)
+	&apos; LibreOffice Basic has no InStrRev, so walk the string from the end.
+	nDot = Len(oDoc.URL)
+	Do While nDot &gt; 0
+		if Mid(oDoc.URL, nDot, 1) = &quot;.&quot; then Exit Do
+		nDot = nDot - 1
+	Loop
 	if nDot &gt; 0 then
 		sNewUrl = Left(oDoc.URL, nDot - 1) &amp; &quot;-compressed&quot; &amp; Mid(oDoc.URL, nDot)
 	else

@@ -53,10 +53,11 @@ def _run():
     opts = pixdialog.ask_options([p.label for p in pictures], sel_idx, total_kb)
     if opts is None:
         return
-    dpi, quality, compression, action, list_pos = opts
+    dpi, quality, compression, action, list_positions = opts
 
-    if action == "selected" and 0 <= list_pos < len(pictures):
-        targets = [pictures[list_pos]]
+    if action == "selected" and list_positions:
+        targets = [pictures[p] for p in list_positions
+                   if 0 <= p < len(pictures)]
     else:
         targets = pictures
     before = sum(p.size_bytes for p in pictures)

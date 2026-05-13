@@ -24,11 +24,11 @@ class _Controller:
     def __init__(self, dialog):
         self.d = dialog
         self.action = None
-        self.selected_pos = -1
+        self.selected_positions = ()
 
     def on_listbox_change(self):
-        pos = self.d.lstImages.obj.getSelectedItemPos()
-        self.d.cmd_selected.model.Enabled = pos >= 0
+        sels = self.d.lstImages.obj.SelectedItems
+        self.d.cmd_selected.model.Enabled = len(sels) > 0
 
     def cmd_all_action(self, event):
         self.action = "all"
@@ -36,7 +36,7 @@ class _Controller:
 
     def cmd_selected_action(self, event):
         self.action = "selected"
-        self.selected_pos = self.d.lstImages.obj.getSelectedItemPos()
+        self.selected_positions = tuple(self.d.lstImages.obj.SelectedItems)
         self.d.close(1)
 
     def cmd_cancel_action(self, event):
@@ -71,6 +71,7 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
 
     dlg.add_control({
         "Type": "listbox", "Name": "lstImages",
+        "MultiSelection": True,
         "X": 5, "Y": 5, "Width": 180, "Height": 140,
     })
     lst = dlg.lstImages.obj
@@ -145,4 +146,4 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
         dpi = DEFAULTS["dpi"]
     dpi = max(72, min(600, dpi))
     return (dpi, dlg.numQuality.int, dlg.numCompression.int,
-            ctrl.action, ctrl.selected_pos)
+            ctrl.action, ctrl.selected_positions)

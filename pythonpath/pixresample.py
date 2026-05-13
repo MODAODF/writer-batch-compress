@@ -12,6 +12,8 @@ import os
 import tempfile
 import uno
 
+from easymacro import dict_to_property
+
 _CTX = uno.getComponentContext()
 _SM = _CTX.getServiceManager()
 
@@ -53,14 +55,15 @@ def resample(img, dpi, quality, compression):
     pixel_w = max(1, int(size.Width * dpi / 2540))
     pixel_h = max(1, int(size.Height * dpi / 2540))
 
-    filter_data = [
-        _prop("PixelWidth", pixel_w),
-        _prop("PixelHeight", pixel_h),
-    ]
+    filter_dict = {"PixelWidth": pixel_w, "PixelHeight": pixel_h}
     if target_mime == "image/jpeg":
-        filter_data.append(_prop("Quality", quality))
+        filter_dict["Quality"] = quality
     else:
-        filter_data.append(_prop("Compression", compression))
+        filter_dict["Compression"] = compression
+    # PyUNO needs an explicit [] type for nested PropertyValue sequences,
+    # otherwise LibreOffice silently ignores FilterData entries and the
+    # bitmap is exported at its native resolution.
+    filter_data = dict_to_property(filter_dict, uno_any=True)
 
     fd, tmp_path = tempfile.mkstemp(prefix="pixcompress_", suffix=".tmp")
     os.close(fd)
@@ -72,11 +75,11 @@ def resample(img, dpi, quality, compression):
     png_w = png_h = -1
     new_graphic = None
     try:
-        provider.storeGraphic(graphic, tuple([
-            _prop("URL", tmp_url),
-            _prop("MimeType", target_mime),
-            _prop("FilterData", tuple(filter_data)),
-        ]))
+        provider.storeGraphic(graphic, dict_to_property({
+            "URL": tmp_url,
+            "MimeType": target_mime,
+            "FilterData": filter_data,
+        }))
         try:
             tmp_after = os.path.getsize(tmp_path)
             if target_mime == "image/png" and tmp_after > 24:
@@ -87,7 +90,7 @@ def resample(img, dpi, quality, compression):
                     png_h = int.from_bytes(head[20:24], "big")
         except OSError:
             pass
-        new_graphic = provider.queryGraphic(tuple([_prop("URL", tmp_url)]))
+        new_graphic = provider.queryGraphic(dict_to_property({"URL": tmp_url}))
         if new_graphic is not None:
             img.Graphic = new_graphic
     finally:

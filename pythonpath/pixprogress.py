@@ -38,17 +38,27 @@ def create(title, total):
     toolkit = smgr.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
     dialog.createPeer(toolkit, None)
     dialog.setVisible(True)
+    _pump(toolkit)
 
-    return _Handle(dialog, dialog.getControl("bar"))
+    return _Handle(dialog, dialog.getControl("bar"), toolkit)
+
+
+def _pump(toolkit):
+    try:
+        toolkit.processEventsToIdle()
+    except AttributeError:
+        pass
 
 
 class _Handle:
-    def __init__(self, dialog, bar):
+    def __init__(self, dialog, bar, toolkit):
         self._dialog = dialog
         self._bar = bar
+        self._toolkit = toolkit
 
     def advance(self, value):
         self._bar.setValue(value)
+        _pump(self._toolkit)
 
     def close(self):
         self._dialog.setVisible(False)

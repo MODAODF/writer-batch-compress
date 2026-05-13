@@ -6,6 +6,8 @@ from com.sun.star.awt import XItemListener
 
 import easymacro as app
 
+from pixi18n import _
+
 DEFAULTS = {
     "dpi": 96,
     "quality": 80,
@@ -14,10 +16,12 @@ DEFAULTS = {
 
 DPI_PRESETS = ("96", "150", "200", "300", "600")
 
-_NUMERIC_FIELDS = (
-    ("numQuality",     "JPEG quality:",    DEFAULTS["quality"],       1,  99),
-    ("numCompression", "PNG compression:", DEFAULTS["compression"],   1,   9),
-)
+
+def _numeric_fields():
+    return (
+        ("numQuality",     _("JPEG quality:"),    DEFAULTS["quality"],     1, 99),
+        ("numCompression", _("PNG compression:"), DEFAULTS["compression"], 1,  9),
+    )
 
 
 class _Controller:
@@ -63,7 +67,7 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
     """
     has_doc_selection = 0 <= selected_index < len(picture_labels)
     dlg = app.dialog.create({
-        "Title": "PixCompress",
+        "Title": _("PixCompress"),
         "Width": 320,
         "Height": 180,
     })
@@ -83,13 +87,14 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
 
     dlg.add_control({
         "Type": "Label", "Name": "lblTotal",
-        "Label": f"Total: {total_kb:,.2f} KB ({len(picture_labels)} pictures)",
+        "Label": _("Total: {kb} KB ({n} pictures)").format(
+            kb=f"{total_kb:,.2f}", n=len(picture_labels)),
         "X": 5, "Y": 148, "Width": 180, "Height": 12,
     })
 
     y = 10
     dlg.add_control({
-        "Type": "Label", "Name": "lblDPI", "Label": "DPI:",
+        "Type": "Label", "Name": "lblDPI", "Label": _("DPI:"),
         "X": 190, "Y": y + 2, "Width": 50, "Height": 14,
     })
     dlg.add_control({
@@ -102,7 +107,7 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
         combo.addItem(val, pos)
     y += 20
 
-    for name, label, default, vmin, vmax in _NUMERIC_FIELDS:
+    for name, label, default, vmin, vmax in _numeric_fields():
         dlg.add_control({
             "Type": "Label", "Name": f"lbl_{name}", "Label": label,
             "X": 190, "Y": y + 2, "Width": 50, "Height": 14,
@@ -118,17 +123,17 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
     by = 80
     dlg.add_control({
         "Type": "button", "Name": "cmd_all",
-        "Label": "Compress all",
+        "Label": _("Compress all"),
         "X": 190, "Y": by, "Width": 120, "Height": 18,
     })
     dlg.add_control({
         "Type": "button", "Name": "cmd_selected",
-        "Label": "Compress selected",
+        "Label": _("Compress selected"),
         "X": 190, "Y": by + 22, "Width": 120, "Height": 18,
     })
     dlg.add_control({
         "Type": "button", "Name": "cmd_cancel",
-        "Label": "Cancel", "PushButtonType": 2,
+        "Label": _("Cancel"), "PushButtonType": 2,
         "X": 190, "Y": by + 44, "Width": 120, "Height": 18,
     })
     dlg.cmd_selected.model.Enabled = has_doc_selection

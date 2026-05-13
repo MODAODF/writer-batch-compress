@@ -2,6 +2,8 @@ import traceback
 
 import easymacro as app
 
+from pixi18n import _
+
 import pixdialog
 import pixmeta
 import pixprogress
@@ -31,21 +33,21 @@ def run():
     try:
         _run()
     except Exception:
-        app.msgbox("PixCompress error:\n\n" + traceback.format_exc())
+        app.msgbox(_("PixCompress error:\n\n{tb}").format(tb=traceback.format_exc()))
 
 
 def _run():
     doc = app.active
     if doc is None or doc.type != "writer":
-        app.msgbox("Open a Writer document first.")
+        app.msgbox(_("Open a Writer document first."))
         return
     if not doc.path:
-        app.msgbox("Save the document before compressing its pictures.")
+        app.msgbox(_("Save the document before compressing its pictures."))
         return
 
     pictures = _analyze(doc)
     if not pictures:
-        app.msgbox("No pictures found in this document.")
+        app.msgbox(_("No pictures found in this document."))
         return
 
     sel_idx = _selected_picture_index(doc, pictures)
@@ -62,7 +64,7 @@ def _run():
         targets = pictures
     before = sum(p.size_bytes for p in pictures)
 
-    progress = pixprogress.create("Compressing pictures...", len(targets))
+    progress = pixprogress.create(_("Compressing pictures..."), len(targets))
     compressed = skipped = 0
     try:
         for i, pic in enumerate(targets):
@@ -82,15 +84,17 @@ def _run():
     doc.obj.storeToURL(new_url, ())
 
     after = sum(pixmeta.picture_sizes(_url_to_path(new_url)).values())
-    app.msgbox(
-        f"Compressed {compressed}, skipped {skipped} (vector/unsupported).\n"
-        f"Pictures: {before/1000:,.2f} KB > {after/1000:,.2f} KB\n"
-        f"Saved to: {new_url}"
-    )
+    app.msgbox("\n".join([
+        _("Compressed {c}, skipped {s} (vector/unsupported).").format(
+            c=compressed, s=skipped),
+        _("Pictures: {before} KB > {after} KB").format(
+            before=f"{before/1000:,.2f}", after=f"{after/1000:,.2f}"),
+        _("Saved to: {url}").format(url=new_url),
+    ]))
 
 
 def _analyze(doc):
-    progress = pixprogress.create("Analyzing pictures...", 2)
+    progress = pixprogress.create(_("Analyzing pictures..."), 2)
     try:
         zip_meta = pixmeta.picture_meta(doc.path)
         progress.advance(1)

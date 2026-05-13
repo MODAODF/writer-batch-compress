@@ -62,7 +62,7 @@ msgid "Compress all"
 msgstr "壓縮全部"
 
 msgid "Compress selected"
-msgstr "壓縮選取"
+msgstr "壓縮選取的圖片"
 
 msgid "Cancel"
 msgstr "取消"

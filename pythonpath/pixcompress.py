@@ -1,5 +1,6 @@
 import easymacro as app
 
+import pixdialog
 import pixmeta
 import pixresample
 
@@ -22,8 +23,10 @@ def run():
         app.msgbox("Save the document before compressing its pictures.")
         return
 
-    # Stage 3: hardcoded params; dialog comes in stage 4.
-    dpi, quality, compression = 96, 80, 6
+    opts = pixdialog.ask_options()
+    if opts is None:
+        return
+    dpi, quality, compression = opts
 
     before = sum(pixmeta.picture_sizes(doc.path).values())
 

@@ -1,4 +1,4 @@
-"""Modal options dialog: DPI / JPEG quality / PNG compression."""
+"""Modal options dialog: picture list + DPI / JPEG quality / PNG compression."""
 
 import easymacro as app
 
@@ -20,37 +20,53 @@ class _Controller:
     def __init__(self, dialog):
         self.d = dialog
 
-    def cmd_ok_action(self, event):
+    def cmd_all_action(self, event):
         self.d.close(1)
+
+    def cmd_selected_action(self, event):
+        self.d.close(2)
 
     def cmd_cancel_action(self, event):
         self.d.close(0)
 
 
-def ask_options(title="PixCompress"):
-    """Show the options dialog. Returns (dpi, quality, compression) or None."""
+def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
+    """Show the options dialog. Returns (dpi, quality, compression, action)
+    where action is 'all' / 'selected', or None if the user cancelled.
+    """
     dlg = app.dialog.create({
-        "Title": title,
-        "Width": 180,
-        "Height": 110,
+        "Title": "PixCompress",
+        "Width": 320,
+        "Height": 180,
     })
     dlg.events = _Controller
 
+    dlg.add_control({
+        "Type": "listbox", "Name": "lstImages",
+        "X": 5, "Y": 5, "Width": 180, "Height": 140,
+    })
+    lst = dlg.lstImages.obj
+    for i, label in enumerate(picture_labels):
+        lst.addItem(label, i)
+    if 0 <= selected_index < len(picture_labels):
+        lst.selectItemPos(selected_index, True)
+
+    dlg.add_control({
+        "Type": "Label", "Name": "lblTotal",
+        "Label": f"Total: {total_kb:,.2f} KB ({len(picture_labels)} pictures)",
+        "X": 5, "Y": 148, "Width": 180, "Height": 12,
+    })
+
     y = 10
     dlg.add_control({
-        "Type": "Label", "Name": "lbl_numDPI", "Label": "DPI:",
-        "X": 10, "Y": y + 2, "Width": 90, "Height": 14,
+        "Type": "Label", "Name": "lblDPI", "Label": "DPI:",
+        "X": 190, "Y": y + 2, "Width": 50, "Height": 14,
     })
     dlg.add_control({
         "Type": "combobox", "Name": "numDPI",
-        "Text": str(DEFAULTS["dpi"]),
-        "Dropdown": True,
-        "X": 105, "Y": y, "Width": 60, "Height": 14,
+        "Text": str(DEFAULTS["dpi"]), "Dropdown": True,
+        "X": 245, "Y": y, "Width": 65, "Height": 14,
     })
-    # Populate the dropdown after construction. Setting StringItemList
-    # via setPropertyValues fails with a PyUNO type mismatch
-    # ([]any vs []string), so add each preset one at a time through
-    # XComboBox.addItem instead.
     combo = dlg.numDPI.obj
     for pos, val in enumerate(DPI_PRESETS):
         combo.addItem(val, pos)
@@ -59,33 +75,42 @@ def ask_options(title="PixCompress"):
     for name, label, default, vmin, vmax in _NUMERIC_FIELDS:
         dlg.add_control({
             "Type": "Label", "Name": f"lbl_{name}", "Label": label,
-            "X": 10, "Y": y + 2, "Width": 90, "Height": 14,
+            "X": 190, "Y": y + 2, "Width": 50, "Height": 14,
         })
         dlg.add_control({
             "Type": "numeric", "Name": name,
-            "Value": default,
-            "ValueMin": vmin, "ValueMax": vmax,
+            "Value": default, "ValueMin": vmin, "ValueMax": vmax,
             "DecimalAccuracy": 0, "Spin": True,
-            "X": 105, "Y": y, "Width": 60, "Height": 14,
+            "X": 245, "Y": y, "Width": 65, "Height": 14,
         })
         y += 20
 
+    by = 80
     dlg.add_control({
-        "Type": "button", "Name": "cmd_ok",
-        "Label": "Compress", "DefaultButton": True, "PushButtonType": 1,
-        "X": 30, "Y": 85, "Width": 60, "Height": 18,
+        "Type": "button", "Name": "cmd_all",
+        "Label": "Compress all", "DefaultButton": True,
+        "X": 190, "Y": by, "Width": 120, "Height": 18,
     })
+    dlg.add_control({
+        "Type": "button", "Name": "cmd_selected",
+        "Label": "Compress selected",
+        "X": 190, "Y": by + 22, "Width": 120, "Height": 18,
+    })
+    if selected_index < 0:
+        dlg.cmd_selected.model.Enabled = False
     dlg.add_control({
         "Type": "button", "Name": "cmd_cancel",
         "Label": "Cancel", "PushButtonType": 2,
-        "X": 100, "Y": 85, "Width": 60, "Height": 18,
+        "X": 190, "Y": by + 44, "Width": 120, "Height": 18,
     })
 
-    if not dlg.open():
+    result = dlg.open()
+    if result == 0:
         return None
     try:
         dpi = int(dlg.numDPI.value)
     except ValueError:
         dpi = DEFAULTS["dpi"]
     dpi = max(72, min(600, dpi))
-    return dpi, dlg.numQuality.int, dlg.numCompression.int
+    action = "all" if result == 1 else "selected"
+    return dpi, dlg.numQuality.int, dlg.numCompression.int, action

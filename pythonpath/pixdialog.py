@@ -27,7 +27,7 @@ class _Controller:
         self.selected_positions = ()
 
     def on_listbox_change(self):
-        sels = self.d.lstImages.obj.SelectedItems
+        sels = self.d.lstImages.obj.getSelectedItemsPos()
         self.d.cmd_selected.model.Enabled = len(sels) > 0
 
     def cmd_all_action(self, event):
@@ -36,7 +36,7 @@ class _Controller:
 
     def cmd_selected_action(self, event):
         self.action = "selected"
-        self.selected_positions = tuple(self.d.lstImages.obj.SelectedItems)
+        self.selected_positions = tuple(self.d.lstImages.obj.getSelectedItemsPos())
         self.d.close(1)
 
     def cmd_cancel_action(self, event):

@@ -1,3 +1,5 @@
+import traceback
+
 import easymacro as app
 
 import pixdialog
@@ -15,6 +17,13 @@ def _is_picture(shape):
 
 
 def run():
+    try:
+        _run()
+    except Exception:
+        app.msgbox("PixCompress error:\n\n" + traceback.format_exc())
+
+
+def _run():
     doc = app.active
     if doc is None or doc.type != "writer":
         app.msgbox("Open a Writer document first.")

@@ -8,8 +8,9 @@ DEFAULTS = {
     "compression": 6,
 }
 
-_FIELDS = (
-    ("numDPI",         "DPI:",             DEFAULTS["dpi"],          72, 600),
+DPI_PRESETS = ("96", "150", "200", "300", "600")
+
+_NUMERIC_FIELDS = (
     ("numQuality",     "JPEG quality:",    DEFAULTS["quality"],       1,  99),
     ("numCompression", "PNG compression:", DEFAULTS["compression"],   1,   9),
 )
@@ -36,21 +37,29 @@ def ask_options(title="PixCompress"):
     dlg.events = _Controller
 
     y = 10
-    for name, label, default, vmin, vmax in _FIELDS:
+    dlg.add_control({
+        "Type": "Label", "Name": "lbl_numDPI", "Label": "DPI:",
+        "X": 10, "Y": y + 2, "Width": 90, "Height": 14,
+    })
+    dlg.add_control({
+        "Type": "combobox", "Name": "numDPI",
+        "Text": str(DEFAULTS["dpi"]),
+        "StringItemList": DPI_PRESETS,
+        "Dropdown": True,
+        "X": 105, "Y": y, "Width": 60, "Height": 14,
+    })
+    y += 20
+
+    for name, label, default, vmin, vmax in _NUMERIC_FIELDS:
         dlg.add_control({
-            "Type": "Label",
-            "Name": f"lbl_{name}",
-            "Label": label,
+            "Type": "Label", "Name": f"lbl_{name}", "Label": label,
             "X": 10, "Y": y + 2, "Width": 90, "Height": 14,
         })
         dlg.add_control({
-            "Type": "numeric",
-            "Name": name,
+            "Type": "numeric", "Name": name,
             "Value": default,
-            "ValueMin": vmin,
-            "ValueMax": vmax,
-            "DecimalAccuracy": 0,
-            "Spin": True,
+            "ValueMin": vmin, "ValueMax": vmax,
+            "DecimalAccuracy": 0, "Spin": True,
             "X": 105, "Y": y, "Width": 60, "Height": 14,
         })
         y += 20
@@ -68,4 +77,9 @@ def ask_options(title="PixCompress"):
 
     if not dlg.open():
         return None
-    return dlg.numDPI.int, dlg.numQuality.int, dlg.numCompression.int
+    try:
+        dpi = int(dlg.numDPI.value)
+    except ValueError:
+        dpi = DEFAULTS["dpi"]
+    dpi = max(72, min(600, dpi))
+    return dpi, dlg.numQuality.int, dlg.numCompression.int

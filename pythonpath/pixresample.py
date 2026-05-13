@@ -15,6 +15,8 @@ import uno
 _CTX = uno.getComponentContext()
 _SM = _CTX.getServiceManager()
 
+_DIAG_FIRED = [False]
+
 # JPEG keeps JPEG; everything else converts to PNG to preserve any
 # alpha channel. Vector formats are silently skipped.
 _RASTER_TARGETS = {
@@ -66,18 +68,36 @@ def resample(img, dpi, quality, compression):
 
     provider = _SM.createInstanceWithContext(
         "com.sun.star.graphic.GraphicProvider", _CTX)
+    tmp_after = -1
     try:
         provider.storeGraphic(graphic, tuple([
             _prop("URL", tmp_url),
             _prop("MimeType", target_mime),
             _prop("FilterData", tuple(filter_data)),
         ]))
+        try:
+            tmp_after = os.path.getsize(tmp_path)
+        except OSError:
+            pass
         new_graphic = provider.queryGraphic(tuple([_prop("URL", tmp_url)]))
     finally:
         try:
             os.remove(tmp_path)
         except OSError:
             pass
+
+    if not _DIAG_FIRED[0]:
+        _DIAG_FIRED[0] = True
+        import easymacro as app
+        app.msgbox(
+            f"DIAG resample first call:\n"
+            f"  src MimeType    = {graphic.MimeType}\n"
+            f"  target MimeType = {target_mime}\n"
+            f"  Size 1/100mm    = {size.Width} x {size.Height}\n"
+            f"  target pixels   = {pixel_w} x {pixel_h}\n"
+            f"  temp file bytes = {tmp_after}\n"
+            f"  new_graphic     = {new_graphic!r}"
+        )
 
     if new_graphic is None:
         return False

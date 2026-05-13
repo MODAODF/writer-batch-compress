@@ -87,33 +87,50 @@ def _run():
 def _analyze(doc):
     progress = pixprogress.create("Analyzing pictures...", 2)
     try:
-        sizes = pixmeta.picture_sizes(doc.path)
-        order = pixmeta.picture_order(doc.path)
+        zip_meta = pixmeta.picture_meta(doc.path)
         progress.advance(1)
 
+        # DrawPage enumeration order does not align with content.xml frame
+        # order, so build a multimap keyed on (width, height, ext) and
+        # consume entries as we walk the shapes. Falls back to (size, ext)
+        # for formats whose dims we don't decode (JPEG/BMP/TIFF).
+        buckets = {}
+        for m in zip_meta:
+            key = (m["width"], m["height"], m["ext"])
+            buckets.setdefault(key, []).append(m)
+
         pictures = []
-        pic_idx = 0
         for shape in doc.draw_page:
             if not _is_picture(shape.obj):
                 continue
-            zip_name = order[pic_idx] if pic_idx < len(order) else ""
-            size_bytes = sizes.get(zip_name, 0)
             graphic = shape.obj.Graphic
-            ext = graphic.MimeType.split("/")[-1] if graphic else "?"
-            # DrawPage enumeration order does not align with content.xml
-            # frame order in general, so don't claim a per-picture KB
-            # figure that could mislead. Show the in-memory pixel size
-            # instead — it's derived from the graphic itself and stays
-            # honest.
+            ext = (graphic.MimeType.split("/")[-1] if graphic else "").lower()
+            if ext == "jpeg":
+                ext = "jpg"
             px = graphic.SizePixel if graphic else None
-            pix_str = f"{px.Width}x{px.Height}px" if px else "?"
-            label = f"{shape.obj.Name}  ({ext})  {pix_str}"
+            pw, ph = (px.Width, px.Height) if px else (0, 0)
+
+            size_bytes = _pop_match(buckets, pw, ph, ext)
+            label = (f"{shape.obj.Name}  ({ext})  "
+                     f"{size_bytes/1000:,.2f} KB" if size_bytes
+                     else f"{shape.obj.Name}  ({ext})  ?")
             pictures.append(_Picture(shape.obj, shape.obj.Name, label, size_bytes))
-            pic_idx += 1
         progress.advance(2)
     finally:
         progress.close()
     return pictures
+
+
+def _pop_match(buckets, w, h, ext):
+    """Find a zip entry matching (w, h, ext) and remove it from the pool."""
+    for key in [(w, h, ext), (w, h, "")]:
+        if buckets.get(key):
+            return buckets[key].pop(0)["size"]
+    # Last-resort fuzzy match on any ext with same dimensions.
+    for key, items in buckets.items():
+        if items and key[0] == w and key[1] == h:
+            return items.pop(0)["size"]
+    return 0
 
 
 def _selected_picture_index(doc, pictures):

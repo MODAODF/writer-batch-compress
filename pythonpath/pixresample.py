@@ -17,8 +17,6 @@ from easymacro import dict_to_property
 _CTX = uno.getComponentContext()
 _SM = _CTX.getServiceManager()
 
-_DIAG_FIRED = [False]
-
 # JPEG keeps JPEG; everything else converts to PNG to preserve any
 # alpha channel. Vector formats are silently skipped.
 _RASTER_TARGETS = {
@@ -29,13 +27,6 @@ _RASTER_TARGETS = {
     "image/tiff": "image/png",
     "image/x-ms-bmp": "image/png",
 }
-
-
-def _prop(name, value):
-    p = uno.createUnoStruct("com.sun.star.beans.PropertyValue")
-    p.Name = name
-    p.Value = value
-    return p
 
 
 def resample(img, dpi, quality, compression):
@@ -71,8 +62,6 @@ def resample(img, dpi, quality, compression):
 
     provider = _SM.createInstanceWithContext(
         "com.sun.star.graphic.GraphicProvider", _CTX)
-    tmp_after = -1
-    png_w = png_h = -1
     new_graphic = None
     try:
         provider.storeGraphic(graphic, dict_to_property({
@@ -80,16 +69,6 @@ def resample(img, dpi, quality, compression):
             "MimeType": target_mime,
             "FilterData": filter_data,
         }))
-        try:
-            tmp_after = os.path.getsize(tmp_path)
-            if target_mime == "image/png" and tmp_after > 24:
-                with open(tmp_path, "rb") as f:
-                    head = f.read(24)
-                if head[:8] == b"\x89PNG\r\n\x1a\n":
-                    png_w = int.from_bytes(head[16:20], "big")
-                    png_h = int.from_bytes(head[20:24], "big")
-        except OSError:
-            pass
         new_graphic = provider.queryGraphic(dict_to_property({"URL": tmp_url}))
         if new_graphic is not None:
             img.Graphic = new_graphic
@@ -98,18 +77,5 @@ def resample(img, dpi, quality, compression):
             os.remove(tmp_path)
         except OSError:
             pass
-
-    if not _DIAG_FIRED[0]:
-        _DIAG_FIRED[0] = True
-        import easymacro as app
-        app.msgbox(
-            f"DIAG resample first call:\n"
-            f"  src MimeType    = {graphic.MimeType}\n"
-            f"  Size 1/100mm    = {size.Width} x {size.Height}\n"
-            f"  target pixels   = {pixel_w} x {pixel_h}\n"
-            f"  temp file bytes = {tmp_after}\n"
-            f"  actual PNG WxH  = {png_w} x {png_h}\n"
-            f"  new_graphic     = {'OK' if new_graphic else 'None'}"
-        )
 
     return new_graphic is not None

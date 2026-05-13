@@ -4,6 +4,7 @@ import easymacro as app
 
 import pixdialog
 import pixmeta
+import pixprogress
 import pixresample
 
 _GRAPHIC_SERVICES = (
@@ -37,33 +38,28 @@ def _run():
         return
     dpi, quality, compression = opts
 
-    bar = doc.status_bar
-
-    bar.start("Analyzing pictures...", 0)
+    progress = pixprogress.create("Analyzing pictures...", 1)
     try:
         before = sum(pixmeta.picture_sizes(doc.path).values())
         shapes = [s for s in doc.draw_page if _is_picture(s.obj)]
+        progress.advance(1)
     finally:
-        bar.end()
+        progress.close()
 
-    bar.start("Compressing pictures...", len(shapes))
+    progress = pixprogress.create("Compressing pictures...", len(shapes))
     compressed = skipped = 0
     try:
         for i, shape in enumerate(shapes):
-            bar.setValue(i + 1)
             if pixresample.resample(shape.obj, dpi, quality, compression):
                 compressed += 1
             else:
                 skipped += 1
+            progress.advance(i + 1)
     finally:
-        bar.end()
+        progress.close()
 
     new_url = _compressed_url(doc.obj.URL)
-    bar.start("Saving compressed copy...", 0)
-    try:
-        doc.obj.storeToURL(new_url, ())
-    finally:
-        bar.end()
+    doc.obj.storeToURL(new_url, ())
 
     after = sum(pixmeta.picture_sizes(uno_url_to_path(new_url)).values())
     app.msgbox(

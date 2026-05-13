@@ -1,5 +1,9 @@
 """Modal options dialog: picture list + DPI / JPEG quality / PNG compression."""
 
+import unohelper
+
+from com.sun.star.awt import XItemListener
+
 import easymacro as app
 
 DEFAULTS = {
@@ -19,21 +23,45 @@ _NUMERIC_FIELDS = (
 class _Controller:
     def __init__(self, dialog):
         self.d = dialog
+        self.action = None
+        self.selected_pos = -1
+
+    def on_listbox_change(self):
+        pos = self.d.lstImages.obj.getSelectedItemPos()
+        self.d.cmd_selected.model.Enabled = pos >= 0
 
     def cmd_all_action(self, event):
+        self.action = "all"
         self.d.close(1)
 
     def cmd_selected_action(self, event):
-        self.d.close(2)
+        self.action = "selected"
+        self.selected_pos = self.d.lstImages.obj.getSelectedItemPos()
+        self.d.close(1)
 
     def cmd_cancel_action(self, event):
         self.d.close(0)
 
 
+class _ListboxListener(unohelper.Base, XItemListener):
+    def __init__(self, controller):
+        self.controller = controller
+
+    def itemStateChanged(self, event):
+        self.controller.on_listbox_change()
+
+    def disposing(self, event):
+        pass
+
+
 def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
-    """Show the options dialog. Returns (dpi, quality, compression, action)
-    where action is 'all' / 'selected', or None if the user cancelled.
+    """Show the options dialog.
+
+    Returns (dpi, quality, compression, action, list_pos) where action is
+    'all' / 'selected' (list_pos is the chosen picture's index inside
+    picture_labels), or None if the user cancelled.
     """
+    has_doc_selection = 0 <= selected_index < len(picture_labels)
     dlg = app.dialog.create({
         "Title": "PixCompress",
         "Width": 320,
@@ -48,8 +76,9 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
     lst = dlg.lstImages.obj
     for i, label in enumerate(picture_labels):
         lst.addItem(label, i)
-    if 0 <= selected_index < len(picture_labels):
+    if has_doc_selection:
         lst.selectItemPos(selected_index, True)
+    lst.addItemListener(_ListboxListener(dlg.events))
 
     dlg.add_control({
         "Type": "Label", "Name": "lblTotal",
@@ -88,7 +117,7 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
     by = 80
     dlg.add_control({
         "Type": "button", "Name": "cmd_all",
-        "Label": "Compress all", "DefaultButton": True,
+        "Label": "Compress all",
         "X": 190, "Y": by, "Width": 120, "Height": 18,
     })
     dlg.add_control({
@@ -96,21 +125,24 @@ def ask_options(picture_labels, selected_index=-1, total_kb=0.0):
         "Label": "Compress selected",
         "X": 190, "Y": by + 22, "Width": 120, "Height": 18,
     })
-    if selected_index < 0:
-        dlg.cmd_selected.model.Enabled = False
     dlg.add_control({
         "Type": "button", "Name": "cmd_cancel",
         "Label": "Cancel", "PushButtonType": 2,
         "X": 190, "Y": by + 44, "Width": 120, "Height": 18,
     })
+    dlg.cmd_selected.model.Enabled = has_doc_selection
+    dlg.cmd_all.model.DefaultButton = not has_doc_selection
+    dlg.cmd_selected.model.DefaultButton = has_doc_selection
 
-    result = dlg.open()
-    if result == 0:
+    if dlg.open() == 0:
+        return None
+    ctrl = dlg.events
+    if ctrl.action is None:
         return None
     try:
         dpi = int(dlg.numDPI.value)
     except ValueError:
         dpi = DEFAULTS["dpi"]
     dpi = max(72, min(600, dpi))
-    action = "all" if result == 1 else "selected"
-    return dpi, dlg.numQuality.int, dlg.numCompression.int, action
+    return (dpi, dlg.numQuality.int, dlg.numCompression.int,
+            ctrl.action, ctrl.selected_pos)

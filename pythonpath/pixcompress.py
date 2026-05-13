@@ -53,9 +53,12 @@ def _run():
     opts = pixdialog.ask_options([p.label for p in pictures], sel_idx, total_kb)
     if opts is None:
         return
-    dpi, quality, compression, action = opts
+    dpi, quality, compression, action, list_pos = opts
 
-    targets = pictures if action == "all" else [pictures[sel_idx]]
+    if action == "selected" and 0 <= list_pos < len(pictures):
+        targets = [pictures[list_pos]]
+    else:
+        targets = pictures
     before = sum(p.size_bytes for p in pictures)
 
     progress = pixprogress.create("Compressing pictures...", len(targets))
@@ -97,7 +100,14 @@ def _analyze(doc):
             size_bytes = sizes.get(zip_name, 0)
             graphic = shape.obj.Graphic
             ext = graphic.MimeType.split("/")[-1] if graphic else "?"
-            label = f"{shape.obj.Name}  ({ext})  {size_bytes/1000:,.2f} KB"
+            # DrawPage enumeration order does not align with content.xml
+            # frame order in general, so don't claim a per-picture KB
+            # figure that could mislead. Show the in-memory pixel size
+            # instead — it's derived from the graphic itself and stays
+            # honest.
+            px = graphic.SizePixel if graphic else None
+            pix_str = f"{px.Width}x{px.Height}px" if px else "?"
+            label = f"{shape.obj.Name}  ({ext})  {pix_str}"
             pictures.append(_Picture(shape.obj, shape.obj.Name, label, size_bytes))
             pic_idx += 1
         progress.advance(2)

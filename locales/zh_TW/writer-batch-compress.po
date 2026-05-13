@@ -1,0 +1,68 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: writer-batch-compress\n"
+"POT-Creation-Date: 2026-05-13 15:15+0800\n"
+"PO-Revision-Date: 2026-05-13 15:15+0800\n"
+"Last-Translator: Dev Lo <lodev@ossii.com.tw>\n"
+"Language-Team: Traditional Chinese <zh-l10n@lists.slat.org>\n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid ""
+"PixCompress error:\n"
+"\n"
+"{tb}"
+msgstr ""
+"圖片壓縮發生錯誤:\n"
+"\n"
+"{tb}"
+
+msgid "Open a Writer document first."
+msgstr "請先開啟 Writer 文件。"
+
+msgid "Save the document before compressing its pictures."
+msgstr "請先儲存文件再執行壓縮。"
+
+msgid "No pictures found in this document."
+msgstr "此文件沒有任何圖片。"
+
+msgid "Compressing pictures..."
+msgstr "正在壓縮圖片..."
+
+msgid "Compressed {c}, skipped {s} (vector/unsupported)."
+msgstr "已壓縮 {c} 張,略過 {s} 張(向量圖或不支援的格式)。"
+
+msgid "Pictures: {before} KB > {after} KB"
+msgstr "圖片大小:{before} KB > {after} KB"
+
+msgid "Saved to: {url}"
+msgstr "已另存為:{url}"
+
+msgid "Analyzing pictures..."
+msgstr "正在分析圖片..."
+
+msgid "JPEG quality:"
+msgstr "JPEG 品質:"
+
+msgid "PNG compression:"
+msgstr "PNG 壓縮等級:"
+
+msgid "PixCompress"
+msgstr "圖片壓縮"
+
+msgid "Total: {kb} KB ({n} pictures)"
+msgstr "總大小:{kb} KB(共 {n} 張圖片)"
+
+msgid "DPI:"
+msgstr "DPI:"
+
+msgid "Compress all"
+msgstr "壓縮全部"
+
+msgid "Compress selected"
+msgstr "壓縮選取"
+
+msgid "Cancel"
+msgstr "取消"

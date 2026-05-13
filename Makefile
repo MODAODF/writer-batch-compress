@@ -24,6 +24,13 @@ FILES = \
     README.md \
     VERSION
 
-all: $(FILES)
+all: $(FILES) mo
 	$(shell ./update_version.sh)
-	zip -r $(PRJNAME)-$(VERNUM).oxt $(FILES) VERSION
+	zip -r $(PRJNAME)-$(VERNUM).oxt $(FILES) VERSION locales
+
+pot:
+	pygettext3 --output-dir locales -o $(PRJNAME).pot \
+	    pythonpath/pixdialog.py pythonpath/pixcompress.py pythonpath/pixi18n.py
+
+mo:
+	msgfmt locales/zh_TW/$(PRJNAME).po -o locales/zh_TW/LC_MESSAGES/$(PRJNAME).mo

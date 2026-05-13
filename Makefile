@@ -19,6 +19,8 @@ FILES = \
     registration/Licence_CeCILL_V2-en.txt \
     icons/ \
     PixCompress/ \
+    pythonpath/ \
+    main.py \
     README.md \
     VERSION
 

@@ -26,7 +26,7 @@
                     <node oor:name="ToolBarItems">
                         <node oor:name="WBC002" oor:op="replace">
                             <prop oor:name="URL" oor:type="xs:string">
-                                <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                                <value>service:org.ossii.WriterBatchCompress.do</value>
                             </prop>
                             <prop oor:name="Title" oor:type="xs:string">
                                 <value xml:lang="en">Compress pictures</value>
@@ -61,7 +61,7 @@
                     <node oor:name="MenuItems">
                         <node oor:name="WBC004" oor:op="replace">
                             <prop oor:name="URL" oor:type="xs:string">
-                                <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                                <value>service:org.ossii.WriterBatchCompress.do</value>
                             </prop>
                             <prop oor:name="Title" oor:type="xs:string">
                                 <value xml:lang="en">Compress all pictures...</value>
@@ -82,7 +82,7 @@
                         <value>com.sun.star.text.TextDocument</value>
                     </prop>
                     <prop oor:name="URL">
-                        <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                        <value>service:org.ossii.WriterBatchCompress.do</value>
                     </prop>
                     <prop oor:name="Title">
                         <value xml:lang="en">Compress all pictures...</value>
@@ -97,7 +97,7 @@
         <node oor:name="Images">
             <node oor:name="org.ossii.WriterBatchCompress.WBC.N001" oor:op="replace">
                 <prop oor:name="URL" oor:type="xs:string">
-                    <value>vnd.sun.star.script:PixCompress.PixCompress.Main?language=Basic&amp;location=application</value>
+                    <value>service:org.ossii.WriterBatchCompress.do</value>
                 </prop>
                 <node oor:name="UserDefinedImages">
                     <prop oor:name="ImageSmallURL" oor:type="xs:string">

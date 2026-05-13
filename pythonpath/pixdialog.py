@@ -1,7 +1,5 @@
 """Modal options dialog: DPI / JPEG quality / PNG compression."""
 
-import uno
-
 import easymacro as app
 
 DEFAULTS = {
@@ -46,12 +44,16 @@ def ask_options(title="PixCompress"):
     dlg.add_control({
         "Type": "combobox", "Name": "numDPI",
         "Text": str(DEFAULTS["dpi"]),
-        # PyUNO renders a plain tuple as []any; UnoControlComboBoxModel
-        # requires []string explicitly.
-        "StringItemList": uno.Any("[]string", DPI_PRESETS),
         "Dropdown": True,
         "X": 105, "Y": y, "Width": 60, "Height": 14,
     })
+    # Populate the dropdown after construction. Setting StringItemList
+    # via setPropertyValues fails with a PyUNO type mismatch
+    # ([]any vs []string), so add each preset one at a time through
+    # XComboBox.addItem instead.
+    combo = dlg.numDPI.obj
+    for pos, val in enumerate(DPI_PRESETS):
+        combo.addItem(val, pos)
     y += 20
 
     for name, label, default, vmin, vmax in _NUMERIC_FIELDS:

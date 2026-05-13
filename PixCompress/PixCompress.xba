@@ -119,8 +119,8 @@ End Sub
 
 Sub CompresseImage
 	Dim oImages as object
-	Dim sMsg as string
-	Dim i as integer
+	Dim sMsg as string, sNewUrl as string
+	Dim i as integer, nDot as integer
 
 	nDPI = oDlg.GetControl(&quot;numDPI&quot;).Value
 	nQuality = oDlg.GetControl(&quot;numQuality&quot;).Value
@@ -148,7 +148,15 @@ Sub CompresseImage
 		Call CopieColle(oImg)
 		sMsg = Trans(6) &amp; oImg.name
 	End if
-	oDoc.store()
+	&apos; Save the compressed result to a new file rather than overwriting
+	&apos; the original. Append &quot;-compressed&quot; before the extension.
+	nDot = InStrRev(oDoc.URL, &quot;.&quot;)
+	if nDot &gt; 0 then
+		sNewUrl = Left(oDoc.URL, nDot - 1) &amp; &quot;-compressed&quot; &amp; Mid(oDoc.URL, nDot)
+	else
+		sNewUrl = oDoc.URL &amp; &quot;-compressed&quot;
+	end if
+	oDoc.storeToURL(sNewUrl, Array())
 	&apos; Recalcul du poids des images
 	sMsg = sMsg &amp; chr(10) &amp; Trans(11)
     sMsg = sMsg &amp; Format(( tPoids / 1000 ), &quot;##,##0.00&quot;) &amp; Trans(8) &amp; &quot; &gt; &quot;
@@ -157,6 +165,7 @@ Sub CompresseImage
 		sPoids = Poids(i)
 	Next i
 	sMsg = sMsg &amp; Format(( tPoids / 1000 ), &quot;##,##0.00&quot;) &amp; Trans(8)
+	sMsg = sMsg &amp; chr(10) &amp; Trans(15) &amp; sNewUrl
 	&apos; Fermeture du dialogue et résultat
 	oDlg.EndExecute
 	msgbox sMsg, 64, &quot;PixCompress&quot;
@@ -270,6 +279,7 @@ english = array ( _
 	&quot;DPI:&quot;, _
 	&quot;JPEG quality:&quot;, _
 	&quot;PNG compression:&quot;, _
+	&quot;Saved to: &quot;, _
 	)
 french = array ( _
 	&quot;Attention : l&apos;opération ne pourra être annulée. Une fois faite, la taille originale des images sera perdue.&quot;, _
@@ -287,6 +297,7 @@ french = array ( _
 	&quot;PPP :&quot;, _
 	&quot;Qualité JPEG :&quot;, _
 	&quot;Compression PNG :&quot;, _
+	&quot;Enregistré sous : &quot;, _
 	)
 chinese = array ( _
 	&quot;注意：壓縮作業無法復原，一旦執行後原始圖片大小將會遺失。&quot;, _
@@ -304,6 +315,7 @@ chinese = array ( _
 	&quot;DPI：&quot;, _
 	&quot;JPEG 品質：&quot;, _
 	&quot;PNG 壓縮等級：&quot;, _
+	&quot;已另存為：&quot;, _
 	)
 
 	Select Case sLang

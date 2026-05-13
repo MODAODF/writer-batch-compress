@@ -20,6 +20,11 @@ def create(title, total):
     dlg_model.Width = 200
     dlg_model.Height = 22
     dlg_model.Title = title
+    # Forbid the user from closing the progress window mid-loop. If the
+    # window goes away while pixcompress.resample is still iterating,
+    # the next advance() lands on a disposed peer and the whole run
+    # falls over.
+    dlg_model.Closeable = False
 
     bar_model = dlg_model.createInstance(
         "com.sun.star.awt.UnoControlProgressBarModel")
@@ -55,11 +60,23 @@ class _Handle:
         self._dialog = dialog
         self._bar = bar
         self._toolkit = toolkit
+        self._closed = False
 
     def advance(self, value):
-        self._bar.setValue(value)
-        _pump(self._toolkit)
+        if self._closed:
+            return
+        try:
+            self._bar.setValue(value)
+            _pump(self._toolkit)
+        except Exception:
+            self._closed = True
 
     def close(self):
-        self._dialog.setVisible(False)
-        self._dialog.dispose()
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            self._dialog.setVisible(False)
+            self._dialog.dispose()
+        except Exception:
+            pass

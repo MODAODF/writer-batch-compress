@@ -66,7 +66,11 @@ def _run():
     compressed = skipped = 0
     try:
         for i, pic in enumerate(targets):
-            if pixresample.resample(pic.shape, dpi, quality, compression):
+            try:
+                ok = pixresample.resample(pic.shape, dpi, quality, compression)
+            except Exception:
+                ok = False
+            if ok:
                 compressed += 1
             else:
                 skipped += 1

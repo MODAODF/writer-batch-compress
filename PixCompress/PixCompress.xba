@@ -21,6 +21,8 @@ Private sLang as string
 Private tPoids as double
 Private nbImg as integer
 Private nDPI as integer
+Private nQuality as integer
+Private nCompression as integer
 
 Sub Main
 	Dim oQuoi as object
@@ -121,6 +123,8 @@ Sub CompresseImage
 	Dim i as integer
 
 	nDPI = oDlg.GetControl(&quot;numDPI&quot;).Value
+	nQuality = oDlg.GetControl(&quot;numQuality&quot;).Value
+	nCompression = oDlg.GetControl(&quot;numCompression&quot;).Value
 	oImages = oDoc.getDrawPage()
 		
 	If not bImage then
@@ -161,20 +165,30 @@ End Sub
 Sub CopieColle (oImg)
 	if oImg.supportsService(&quot;com.sun.star.text.TextGraphicObject&quot;) or _
 	   oImg.supportsService(&quot;com.sun.star.drawing.GraphicObjectShape&quot;) then
-		Call ResampleBitmap(oImg, nDPI)
+		Call ResampleBitmap(oImg, nDPI, nQuality, nCompression)
 	end if
 End Sub
 
-&apos; Resample a bitmap-backed image at the requested DPI.
+&apos; Resample a bitmap-backed image at the requested DPI and re-encode
+&apos; with the given JPEG quality / PNG compression level.
+&apos;
+&apos; We use com.sun.star.graphic.GraphicProvider.storeGraphic — not
+&apos; GraphicExportFilter — because the latter silently ignores PixelWidth
+&apos; / PixelHeight when the source is a Writer raster shape (see
+&apos; svx/source/unodraw/UnoGraphicExporter.cxx). GraphicProvider routes
+&apos; through ImplApplyFilterData -&gt; BitmapEx::Scale which honours the
+&apos; pixel size and applies Lanczos by default.
+&apos;
 &apos; Vector graphics (SVG/EMF/WMF) are skipped and the function returns false.
-Function ResampleBitmap(oImg as object, nDPI as integer) as boolean
+Function ResampleBitmap(oImg as object, nDPI as integer, _
+                        nQuality as integer, nCompression as integer) as boolean
 	Dim sMime as string, sFilterMime as string
-	Dim oTaille as object, oExporter as object, oProvider as object
+	Dim oTaille as object, oProvider as object
 	Dim oNewGraph as object, oSFA as object, oPaths as object
 	Dim nPixW as long, nPixH as long
 	Dim sUrl as string
 	Dim aFilter(2) as new com.sun.star.beans.PropertyValue
-	Dim aOut(2)    as new com.sun.star.beans.PropertyValue
+	Dim aStore(2)  as new com.sun.star.beans.PropertyValue
 	Dim aLoad(0)   as new com.sun.star.beans.PropertyValue
 
 	ResampleBitmap = false
@@ -198,16 +212,19 @@ Function ResampleBitmap(oImg as object, nDPI as integer) as boolean
 
 	aFilter(0).Name = &quot;PixelWidth&quot;  : aFilter(0).Value = nPixW
 	aFilter(1).Name = &quot;PixelHeight&quot; : aFilter(1).Value = nPixH
-	aFilter(2).Name = &quot;Translucent&quot; : aFilter(2).Value = true
-	aOut(0).Name = &quot;MediaType&quot;  : aOut(0).Value = sFilterMime
-	aOut(1).Name = &quot;URL&quot;        : aOut(1).Value = sUrl
-	aOut(2).Name = &quot;FilterData&quot; : aOut(2).Value = aFilter()
+	if sFilterMime = &quot;image/jpeg&quot; then
+		aFilter(2).Name = &quot;Quality&quot;     : aFilter(2).Value = nQuality
+	else
+		aFilter(2).Name = &quot;Compression&quot; : aFilter(2).Value = nCompression
+	end if
 
-	oExporter = createUnoService(&quot;com.sun.star.drawing.GraphicExportFilter&quot;)
-	oExporter.setSourceDocument(oImg)
-	oExporter.filter(aOut())
+	aStore(0).Name = &quot;URL&quot;        : aStore(0).Value = sUrl
+	aStore(1).Name = &quot;MimeType&quot;   : aStore(1).Value = sFilterMime
+	aStore(2).Name = &quot;FilterData&quot; : aStore(2).Value = aFilter()
 
 	oProvider = createUnoService(&quot;com.sun.star.graphic.GraphicProvider&quot;)
+	oProvider.storeGraphic(oImg.Graphic, aStore())
+
 	aLoad(0).Name = &quot;URL&quot; : aLoad(0).Value = sUrl
 	oNewGraph = oProvider.queryGraphic(aLoad())
 

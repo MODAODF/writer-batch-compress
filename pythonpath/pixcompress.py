@@ -1,6 +1,16 @@
 import easymacro as app
 
 import pixmeta
+import pixresample
+
+_GRAPHIC_SERVICES = (
+    "com.sun.star.text.TextGraphicObject",
+    "com.sun.star.drawing.GraphicObjectShape",
+)
+
+
+def _is_picture(shape):
+    return any(shape.supportsService(s) for s in _GRAPHIC_SERVICES)
 
 
 def run():
@@ -12,16 +22,39 @@ def run():
         app.msgbox("Save the document before compressing its pictures.")
         return
 
-    sizes = pixmeta.picture_sizes(doc.path)
-    order = pixmeta.picture_order(doc.path)
+    # Stage 3: hardcoded params; dialog comes in stage 4.
+    dpi, quality, compression = 96, 80, 6
 
-    lines = [f"Total pictures in zip: {len(sizes)}",
-             f"Pictures in content.xml order: {len(order)}",
-             ""]
-    for i, name in enumerate(order[:5]):
-        size_kb = sizes.get(name, 0) / 1000
-        lines.append(f"  [{i}] {name}  {size_kb:,.2f} KB")
-    if len(order) > 5:
-        lines.append(f"  ... and {len(order) - 5} more")
+    before = sum(pixmeta.picture_sizes(doc.path).values())
 
-    app.msgbox("\n".join(lines))
+    compressed = skipped = 0
+    for shape in doc.draw_page:
+        if _is_picture(shape.obj):
+            if pixresample.resample(shape.obj, dpi, quality, compression):
+                compressed += 1
+            else:
+                skipped += 1
+
+    new_url = _compressed_url(doc.obj.URL)
+    doc.obj.storeToURL(new_url, ())
+
+    after = sum(pixmeta.picture_sizes(uno_url_to_path(new_url)).values())
+    app.msgbox(
+        f"Compressed {compressed}, skipped {skipped} (vector/unsupported).\n"
+        f"Pictures: {before/1000:,.2f} KB > {after/1000:,.2f} KB\n"
+        f"Saved to: {new_url}"
+    )
+
+
+def _compressed_url(url):
+    """Insert '-compressed' before the file extension of a file:// URL."""
+    dot = url.rfind(".")
+    slash = url.rfind("/")
+    if dot > slash:
+        return url[:dot] + "-compressed" + url[dot:]
+    return url + "-compressed"
+
+
+def uno_url_to_path(url):
+    import uno
+    return uno.fileUrlToSystemPath(url)

@@ -79,7 +79,7 @@ def resample(img, dpi, quality, compression):
         ]))
         try:
             tmp_after = os.path.getsize(tmp_path)
-            if target_mime == "image/png" and tmp_after &gt; 24:
+            if target_mime == "image/png" and tmp_after > 24:
                 with open(tmp_path, "rb") as f:
                     head = f.read(24)
                 if head[:8] == b"\x89PNG\r\n\x1a\n":

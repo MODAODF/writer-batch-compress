@@ -2,6 +2,8 @@
 
 Adapted from [PixCompress](https://extensions.libreoffice.org/en/extensions/show/1034) (Bidouille / O. Morelle), originally a LibreOffice Basic macro. The current version is a complete Python rewrite and performs the actual resampling through `com.sun.star.graphic.GraphicProvider.storeGraphic`.
 
+This extension uses [easymacro](https://git.cuates.net/elmau/easymacro) developed by Mauricio Baeza, which is released under GPLv3.
+
 ## Features
 
 - Pressing the toolbar button first runs an *analysis* pass that lists every raster picture in the document (name, format, size in KB) so the user can pick which ones to compress.
@@ -40,6 +42,8 @@ For a tour of the source layout and the control flow of each user action, see [d
 # Writer 批次壓縮所有圖片
 
 原本由 [PixCompress](https://extensions.libreoffice.org/en/extensions/show/1034)（Bidouille / O. Morelle）的 LibreOffice Basic 巨集改寫而來；目前的版本已完全以 Python 重寫，並透過 `com.sun.star.graphic.GraphicProvider.storeGraphic` 取得實際的解析度。
+
+此延伸套件使用 Mauricio Baeza 所開發之 [easymacro](https://git.cuates.net/elmau/easymacro)。
 
 ## 功能
 

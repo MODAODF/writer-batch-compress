@@ -5,7 +5,7 @@
  xmlns:l="http://libreoffice.org/extensions/description/2011"
  xmlns:xlink="http://www.w3.org/1999/xlink">
 	<identifier value="org.ossii.WriterBatchCompress"/>
-	<version value="0.2.0"/>
+	<version value="0.2.1"/>
 	<dependencies>
         <l:LibreOffice-minimal-version value="6.1" d:name="LibreOffice 6.1" />
 	</dependencies>

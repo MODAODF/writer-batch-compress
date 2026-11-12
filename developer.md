@@ -82,7 +82,7 @@ pixcompress._run()             ← 真正的流程
    - `doc.path` 為空（未存檔）→ 顯示 `Save the document before compressing its pictures.` 後 return。`storeToURL` 需要原檔位置。
 3. **分析階段** `_analyze(doc)`（見下方「分析動作」）。若回空 list → 顯示 `No pictures found in this document.` 後 return。
 4. **偵測文件中選取的圖片** `_selected_picture_index(doc, pictures)` → 回傳 list 中對應的 index 或 -1。用來決定對話框預設按鈕（如果使用者在文件中已點了一張圖，預設按 *Compress selected*）。
-5. **計算總大小** `sum(p.size_bytes for p in pictures) / 1000`，傳給對話框顯示 `Total: ... KB (N pictures)`。
+5. **計算總大小** 分析快照中 `sum(pixmeta.picture_sizes(snapshot).values()) / 1000`（共用資源只計一次），傳給對話框顯示 `Total: ... KB (N pictures)`。
 6. **彈出對話框** `pixdialog.ask_options(labels, sel_idx, total_kb)`（見下方「對話框互動」）。回 None 表示使用者按 Cancel。
 7. **依使用者選擇決定壓縮對象**：
    - `action == "selected"` → `targets = [pictures[p] for p in list_positions]`
@@ -146,20 +146,14 @@ pixcompress._run()             ← 真正的流程
 ### 動作 F：分析動作（`_analyze`）
 
 1. 開 `pixprogress.create(_("Analyzing pictures..."), 2)` 顯示「正在分析圖片」對話框。
-2. **讀 zip metadata** `pixmeta.picture_meta(doc.path)`：
-   - 純 Python，沒呼叫 UNO。
-   - 對 `Pictures/*` 每個 entry 讀檔頭 32 bytes，PNG 從 IHDR 抽 width/height、GIF 從 LSD 抽，其餘（JPEG/BMP/TIFF）就是 (0, 0)。
-   - 回 `[{filename, ext, size, width, height}, ...]`。
-3. **建立 buckets**：`{(w, h, ext): [zip_entry, ...]}`。同維度同副檔名可能多筆。
-4. **走訪 DrawPage** 對每個 shape：
-   - 若不是 picture（`com.sun.star.text.TextGraphicObject` / `com.sun.star.drawing.GraphicObjectShape`）就跳過。
-   - 從 `shape.Graphic.MimeType` 推 ext，`jpeg` 統一改 `jpg`（zip 內常用 .jpg）。
-   - 從 `shape.Graphic.SizePixel` 取 (w, h)。
-   - `_pop_match(buckets, w, h, ext)`：在 bucket 找第一個 `(w, h, ext)` 匹配的 entry 並 pop 出來；找不到就退而求其次按 `(w, h, "")`；再不行就放寬到「任何 ext 但同 w, h」。回傳對應的 `size`（位元組）。
-   - 用 `(name, ext, size)` 組 label 加進 `pictures`。
-5. `progress.close()`。
+2. 用 `storeToURL` 與 `FilterName=writer8` 將目前記憶體中的文件匯出成暫存 ODT，包含尚未儲存的圖片修改，不讀磁碟上的舊原檔。暫存目錄在成功或發生例外時都會清除。
+3. `pixmeta.picture_frames(snapshot)` 解析 `content.xml` 與 `styles.xml`（包含頁首頁尾）：以唯一的 `draw:frame/@draw:name` 對應 `draw:image/@xlink:href`，再從 ZIP entry 取得未壓縮的圖片檔案位元組數。
+4. 走訪 DrawPage，使用圖片物件的 `Name` 查表。無須比對像素、格式或列舉順序，也不會消耗資源記錄，因此同一張圖片重複引用時每個物件都能顯示大小。
+5. 外部連結、遺失資源、重複 frame 名稱或同一 frame 有多個圖片表示時，以 `None` 表示未知，清單顯示 `?`；實際 0 bytes 則顯示 `0.00 KB`。
+6. 回傳 `(pictures, total)`。總計加總快照內的 `Pictures/` 資源，每個資源只計一次，與壓縮後對輸出 ODT 的統計方式相同。因此清單列的大小加總可能大於總計（多個物件共用圖片），外部連結則不納入內嵌資源總計。
+7. `progress.close()`。
 
-> ⚠️ 為什麼這樣對應？DrawPage 列舉順序 ≠ `content.xml` 中 `<draw:image>` 出現順序，更**不等於** Pictures/ 字典序。原本 BASIC 版本用「DrawPage 索引 = zip 字典序索引」，所以「影像 24」會掛上某張不相關的大小。改用 `SizePixel` + `MimeType` 比對是目前唯一不依賴順序假設的方法。在維度極不重複的文件中可能仍有歧義，會 fall back 到 fuzzy 匹配。
+回歸測試：`python3 -m unittest discover -s tests -v`。測試不需 UNO，涵蓋格式與大小獨立、重複引用、未知與零位元組、頁首頁尾、未儲存內容的快照及例外清理。實際 UNO 整合測試：`/opt/libreoffice26.8/program/python tests/verify_libreoffice.py`（請視安裝位置調整路徑）。此測試以獨立 headless instance 驗證同尺寸 PNG、JPG、共用資源、未儲存替換、原檔保留，以及真實重採樣後輸出與快照總計一致；已在 LibreOffice 26.8.1.1 通過。互動對話框仍需人工確認。
 
 ### 動作 G：單張圖片重採樣（`pixresample.resample`）
 

@@ -15,6 +15,8 @@ This extension uses [easymacro](https://git.cuates.net/elmau/easymacro) develope
 - The UI follows the LibreOffice UI language. Traditional Chinese is bundled; other locales fall back to English.
 - The compress button sits on the standard toolbar just before *Insert Chart*. The same action is also reachable from *Insert → Image*.
 
+Picture sizes are measured from a temporary ODT export of the current document, including unsaved edits. Totals count each embedded `Pictures/` resource once, even when several objects share it. Unknown object sizes appear as `?`.
+
 ## Known Limitations
 
 - The bitmap scaling interpolation is whatever LibreOffice defaults to (Lanczos in current builds). UNO does not expose `BmpScaleFlag`, so unlike the built-in *Compress Image* dialog this extension cannot offer a Bilinear / Bicubic / None choice.
@@ -55,6 +57,8 @@ For a tour of the source layout and the control flow of each user action, see [d
 - 壓縮結果**另存為 `原檔名-compressed.odt`**，不會覆蓋原檔。
 - 介面語系跟隨 LibreOffice UI（目前提供繁體中文翻譯，其他語系自動 fallback 英文）。
 - 於 Writer 標準工具列的「插入圖表」按鈕前提供按鈕，亦可由「插入 → 圖片」選單啟動。
+
+圖片大小取自目前文件的 ODT 暫存快照，包含尚未儲存的修改。總計對每份內嵌 `Pictures/` 資源只計算一次；多個圖片物件共用資源時不重複加總。無法明確識別的單張圖片大小顯示 `?`。
 
 ## 已知限制
 

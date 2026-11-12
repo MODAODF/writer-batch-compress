@@ -1,3 +1,5 @@
+import tempfile
+from pathlib import Path
 import traceback
 
 import easymacro as app
@@ -45,13 +47,13 @@ def _run():
         app.msgbox(_("Save the document before compressing its pictures."))
         return
 
-    pictures = _analyze(doc)
+    pictures, before = _analyze(doc)
     if not pictures:
         app.msgbox(_("No pictures found in this document."))
         return
 
     sel_idx = _selected_picture_index(doc, pictures)
-    total_kb = sum(p.size_bytes for p in pictures) / 1000
+    total_kb = before / 1000
     opts = pixdialog.ask_options([p.label for p in pictures], sel_idx, total_kb)
     if opts is None:
         return
@@ -62,7 +64,6 @@ def _run():
                    if 0 <= p < len(pictures)]
     else:
         targets = pictures
-    before = sum(p.size_bytes for p in pictures)
 
     progress = pixprogress.create(_("Compressing pictures..."), len(targets))
     compressed = skipped = 0
@@ -96,17 +97,18 @@ def _run():
 def _analyze(doc):
     progress = pixprogress.create(_("Analyzing pictures..."), 2)
     try:
-        zip_meta = pixmeta.picture_meta(doc.path)
+        # Export the current model, including edits not saved to doc.path.
+        # storeToURL preserves the document's URL and does not save the original.
+        import uno
+        with tempfile.TemporaryDirectory(prefix="pixcompress_analysis_") as tmp:
+            snapshot = Path(tmp) / "snapshot.odt"
+            doc.obj.storeToURL(
+                uno.systemPathToFileUrl(str(snapshot)),
+                app.dict_to_property({"FilterName": "writer8"}),
+            )
+            frames = pixmeta.picture_frames(snapshot)
+            total = sum(pixmeta.picture_sizes(snapshot).values())
         progress.advance(1)
-
-        # DrawPage enumeration order does not align with content.xml frame
-        # order, so build a multimap keyed on (width, height, ext) and
-        # consume entries as we walk the shapes. Falls back to (size, ext)
-        # for formats whose dims we don't decode (JPEG/BMP/TIFF).
-        buckets = {}
-        for m in zip_meta:
-            key = (m["width"], m["height"], m["ext"])
-            buckets.setdefault(key, []).append(m)
 
         pictures = []
         for shape in doc.draw_page:
@@ -116,30 +118,15 @@ def _analyze(doc):
             ext = (graphic.MimeType.split("/")[-1] if graphic else "").lower()
             if ext == "jpeg":
                 ext = "jpg"
-            px = graphic.SizePixel if graphic else None
-            pw, ph = (px.Width, px.Height) if px else (0, 0)
-
-            size_bytes = _pop_match(buckets, pw, ph, ext)
-            label = (f"{shape.obj.Name}  ({ext})  "
-                     f"{size_bytes/1000:,.2f} KB" if size_bytes
-                     else f"{shape.obj.Name}  ({ext})  ?")
+            size_bytes = frames.get(shape.obj.Name)
+            size_label = (f"{size_bytes/1000:,.2f} KB"
+                          if size_bytes is not None else "?")
+            label = f"{shape.obj.Name}  ({ext})  {size_label}"
             pictures.append(_Picture(shape.obj, shape.obj.Name, label, size_bytes))
         progress.advance(2)
     finally:
         progress.close()
-    return pictures
-
-
-def _pop_match(buckets, w, h, ext):
-    """Find a zip entry matching (w, h, ext) and remove it from the pool."""
-    for key in [(w, h, ext), (w, h, "")]:
-        if buckets.get(key):
-            return buckets[key].pop(0)["size"]
-    # Last-resort fuzzy match on any ext with same dimensions.
-    for key, items in buckets.items():
-        if items and key[0] == w and key[1] == h:
-            return items.pop(0)["size"]
-    return 0
+    return pictures, total
 
 
 def _selected_picture_index(doc, pictures):

@@ -4,6 +4,8 @@ Replaces the brittle BASIC parser that walked content.xml char-by-char.
 zipfile + ElementTree handle long offsets and namespaces correctly.
 """
 
+import posixpath
+from urllib.parse import unquote
 import zipfile
 from xml.etree import ElementTree as ET
 
@@ -21,50 +23,35 @@ def picture_sizes(odt_path):
     return sizes
 
 
-def picture_meta(odt_path):
-    """Return [{filename, ext, size, width, height}, ...] for every Pictures/*.
+def picture_frames(odt_path):
+    """Map unique draw:frame names to embedded image sizes, or None.
 
-    width/height are decoded from the file header when the format is one we
-    can parse cheaply (PNG, GIF). For other formats we leave them at 0 and
-    callers fall back to matching by (size, ext).
+    Frame names identify Writer/Draw objects independently of enumeration order.
+    Repeated references retain their size. Ambiguous names, external links,
+    missing resources and frames with multiple image representations are unknown.
+    Headers/footers can live in styles.xml rather than content.xml.
     """
-    out = []
-    with zipfile.ZipFile(odt_path, "r") as zf:
-        for info in zf.infolist():
-            if not info.filename.startswith("Pictures/") or info.filename.endswith("/"):
+    frames = {}
+    with zipfile.ZipFile(odt_path) as zf:
+        sizes = {info.filename: info.file_size for info in zf.infolist()
+                 if not info.is_dir()}
+        for xml_name in ("content.xml", "styles.xml"):
+            if xml_name not in sizes:
                 continue
-            name = info.filename[len("Pictures/"):]
-            ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-            with zf.open(info) as f:
-                head = f.read(32)
-            w, h = _decode_dims(head)
-            out.append({"filename": name, "ext": ext,
-                        "size": info.file_size, "width": w, "height": h})
-    return out
-
-
-def _decode_dims(head):
-    if head[:8] == b"\x89PNG\r\n\x1a\n" and len(head) >= 24:
-        return (int.from_bytes(head[16:20], "big"),
-                int.from_bytes(head[20:24], "big"))
-    if head[:6] in (b"GIF87a", b"GIF89a") and len(head) >= 10:
-        return (int.from_bytes(head[6:8], "little"),
-                int.from_bytes(head[8:10], "little"))
-    return (0, 0)
-
-
-def picture_order(odt_path):
-    """Filenames of <draw:image> hrefs in document order.
-
-    Matches the order in which LibreOffice's DrawPage enumerates picture
-    shapes, so callers can index into this list with the picture's
-    position in DrawPage.
-    """
-    with zipfile.ZipFile(odt_path, "r") as zf:
-        tree = ET.parse(zf.open("content.xml"))
-    order = []
-    for elem in tree.iter(f"{DRAW_NS}image"):
-        href = elem.get(f"{XLINK_NS}href", "")
-        if href.startswith("Pictures/"):
-            order.append(href[len("Pictures/"):])
-    return order
+            with zf.open(xml_name) as stream:
+                tree = ET.parse(stream)
+            for frame in tree.iter(f"{DRAW_NS}frame"):
+                images = frame.findall(f"{DRAW_NS}image")
+                if not images:
+                    continue
+                name = frame.get(f"{DRAW_NS}name")
+                if not name:
+                    continue
+                size = None
+                if len(images) == 1:
+                    href = unquote(images[0].get(f"{XLINK_NS}href", ""))
+                    path = posixpath.normpath(href)
+                    if path.startswith("Pictures/"):
+                        size = sizes.get(path)
+                frames[name] = None if name in frames else size
+    return frames
